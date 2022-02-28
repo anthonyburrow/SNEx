@@ -8,11 +8,14 @@ _NIR_methods = ('planck', 'wien')
 _UV_method = ('',)
 
 
+# TODO: include exctinction in SNEx init/read_spectrum
+
+
 class SNEx:
 
-    def __init__(self, data, *args, **kwargs):
+    def __init__(self, data, z=None, wave_range=None, *args, **kwargs):
         if isinstance(data, str):
-            self.data = read_spectrum(data, **kwargs)
+            self.data = read_spectrum(data, z, wave_range, **kwargs)
         else:
             self.data = data
 

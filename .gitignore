@@ -2,6 +2,7 @@ __pycache__/
 
 data/
 ex_data/
+model_scripts/
 testing/
 
 example/*.pdf

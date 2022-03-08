@@ -1,6 +1,7 @@
 __pycache__/
 
 data/
+log/
 ex_data/
 model_scripts/
 testing/

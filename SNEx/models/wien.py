@@ -1,6 +1,6 @@
 from numpy import exp
 
-from .extrapolationmodel import ExtrapolationModel
+from .continuummodel import ContinuumModel
 from ..util.constants import c, h, k_B
 
 
@@ -8,7 +8,7 @@ from ..util.constants import c, h, k_B
 _default_params = (10000., 1e0)
 
 
-class Wien(ExtrapolationModel):
+class Wien(ContinuumModel):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

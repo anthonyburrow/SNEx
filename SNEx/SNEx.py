@@ -1,10 +1,10 @@
-from .models import Wien, Planck
+from .models import Wien, Planck, PCA
 from .util.filter import monotonic
 from .util.fitting import fit_methods
 from .util.io import read_spectrum
 from .util.misc import check_method
 
-_NIR_methods = ('planck', 'wien')
+_NIR_methods = ('planck', 'wien', 'pca')
 _UV_method = ('',)
 
 
@@ -19,8 +19,9 @@ class SNEx:
         else:
             self.data = data
 
-    def predict(self, x_pred, regime='NIR', fit_range=None, extrap_method=None,
-                fit_method=None, filter_method=None, *args, **kwargs):
+    def predict(self, x_pred=None, regime='NIR', fit_range=None,
+                extrap_method=None, fit_method=None, filter_method=None,
+                *args, **kwargs):
         fit_method = check_method(fit_method, fit_methods)
 
         if regime.lower() == 'nir':
@@ -43,14 +44,14 @@ class SNEx:
 
         return filtered_data
 
-    def _predict_NIR(self, x_pred, fit_range=None, fit_method=None,
+    def _predict_NIR(self, x_pred=None, fit_range=None, fit_method=None,
                      extrap_method=None, filter_method=None, *args, **kwargs):
         extrap_method = check_method(extrap_method, _NIR_methods)
 
         data = self._filter(self.data, filter_method)
 
         if fit_range is None:
-            fit_range = (6200., 12000.)
+            fit_range = (5500., 8000.)
 
         if extrap_method == 'wien':
             print('Predicting with Wien model...')
@@ -58,11 +59,18 @@ class SNEx:
         elif extrap_method == 'planck':
             print('Predicting with Planck model...')
             model = Planck(data, wave_range=fit_range)
+        elif extrap_method == 'pca':
+            print('Predicting with NIR PCA model...')
+            model = PCA(data, regime='nir', wave_range=fit_range,
+                        *args, **kwargs)
+            model.fit(fit_method=fit_method, *args, **kwargs)
+            # print(f'   {model}')
+            return model.predict()
 
         model.fit(fit_method=fit_method, *args, **kwargs)
         print(f'   {model}')
         return model.predict(x_pred)
 
-    def _predict_UV(self, x_pred, fit_range=None, fit_method=None,
+    def _predict_UV(self, x_pred=None, fit_range=None, fit_method=None,
                     extrap_method=None, filter_method=None, *args, **kwargs):
         extrap_method = check_method(extrap_method, _UV_method)

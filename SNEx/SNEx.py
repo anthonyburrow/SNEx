@@ -19,23 +19,40 @@ class SNEx:
         else:
             self.data = data
 
-    def predict(self, x_pred=None, regime='NIR', fit_range=None,
-                extrap_method=None, fit_method=None, filter_method=None,
-                *args, **kwargs):
-        fit_method = check_method(fit_method, fit_methods)
-
+    def predict(self, regime='nir', *args, **kwargs):
         if regime.lower() == 'nir':
-            return self._predict_NIR(x_pred, fit_range, fit_method,
-                                     extrap_method, filter_method,
-                                     *args, **kwargs)
+            return self._predict_NIR(*args, **kwargs)
         elif regime.lower() == 'uv':
-            return self._predict_UV(x_pred, fit_range, fit_method,
-                                    extrap_method, filter_method,
-                                    *args, **kwargs)
+            return self._predict_UV(*args, **kwargs)
         else:
             raise RuntimeError('Unknown wavelength regime.')
 
-    def _filter(self, data, filter_method):
+    def _predict_NIR(self, extrap_method=None, *args, **kwargs):
+        extrap_method = check_method(extrap_method, _NIR_methods)
+
+        data = self._filter(self.data, *args, **kwargs)
+
+        if extrap_method == 'wien':
+            print('Predicting with Wien model...')
+            model = Wien(data, *args, **kwargs)
+        elif extrap_method == 'planck':
+            print('Predicting with Planck model...')
+            model = Planck(data, *args, **kwargs)
+        elif extrap_method == 'pca':
+            print('Predicting with NIR PCA model...')
+            model = PCA('nir', data=data, *args, **kwargs)
+
+        # TODO: Add extra attributes from specific model to SNEx model here
+
+        model.fit(*args, **kwargs)
+        print(f'   {model}')
+        return model.predict(*args, **kwargs)
+
+    def _predict_UV(self, x_pred=None, fit_range=None, fit_method=None,
+                    extrap_method=None, filter_method=None, *args, **kwargs):
+        extrap_method = check_method(extrap_method, _UV_method)
+
+    def _filter(self, data, filter_method=None, *args, **kwargs):
         if filter_method is None:
             return data
 
@@ -43,34 +60,3 @@ class SNEx:
             filtered_data = monotonic(self.data)
 
         return filtered_data
-
-    def _predict_NIR(self, x_pred=None, fit_range=None, fit_method=None,
-                     extrap_method=None, filter_method=None, *args, **kwargs):
-        extrap_method = check_method(extrap_method, _NIR_methods)
-
-        data = self._filter(self.data, filter_method)
-
-        if fit_range is None:
-            fit_range = (5500., 8000.)
-
-        if extrap_method == 'wien':
-            print('Predicting with Wien model...')
-            model = Wien(data, wave_range=fit_range)
-        elif extrap_method == 'planck':
-            print('Predicting with Planck model...')
-            model = Planck(data, wave_range=fit_range)
-        elif extrap_method == 'pca':
-            print('Predicting with NIR PCA model...')
-            model = PCA(data, regime='nir', wave_range=fit_range,
-                        *args, **kwargs)
-            model.fit(fit_method=fit_method, *args, **kwargs)
-            # print(f'   {model}')
-            return model.predict()
-
-        model.fit(fit_method=fit_method, *args, **kwargs)
-        print(f'   {model}')
-        return model.predict(x_pred)
-
-    def _predict_UV(self, x_pred=None, fit_range=None, fit_method=None,
-                    extrap_method=None, filter_method=None, *args, **kwargs):
-        extrap_method = check_method(extrap_method, _UV_method)

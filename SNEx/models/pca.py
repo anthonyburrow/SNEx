@@ -6,6 +6,7 @@ from os.path import dirname
 from .extrapolationmodel import ExtrapolationModel
 
 
+# Model information
 _available_times = (0, 2, 4, 6)
 _n_points = 250
 
@@ -29,8 +30,7 @@ _model_dir = f'{dirname(__file__)}/PCA_models'
 
 class PCA(ExtrapolationModel):
 
-    def __init__(self, regime, time=None, n_components=None,
-                 *args, **kwargs):
+    def __init__(self, regime, time=None, n_components=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         time = self._select_model_time(time)

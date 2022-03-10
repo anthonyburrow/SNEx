@@ -1,11 +1,10 @@
 from .models import Wien, Planck, PCA
 from .util.filter import monotonic
-from .util.fitting import fit_methods
 from .util.io import read_spectrum
 from .util.misc import check_method
 
-_NIR_methods = ('planck', 'wien', 'pca')
-_UV_method = ('',)
+_default_NIR = 'pca'
+_default_UV = ''
 
 
 # TODO: include exctinction in SNEx init/read_spectrum
@@ -20,17 +19,68 @@ class SNEx:
             self.data = data
 
     def predict(self, regime='nir', *args, **kwargs):
-        if regime.lower() == 'nir':
-            return self._predict_NIR(*args, **kwargs)
-        elif regime.lower() == 'uv':
-            return self._predict_UV(*args, **kwargs)
+        """Make a prediction to extrapolate spectra in the NIR or UV.
+
+        Parameters
+        ----------
+        x_pred : numpy.ndarray, optional
+            Needed for Wien and Planck models. These are the wavelengths at
+            which the model is predicting. Not used in PCA as the PCA model
+            requires specific wavelength points for prediction.
+        regime : str, optional
+            Wavelength regime ('uv' or 'nir'). Defaults to 'nir'.
+        extrap_method : str, optional
+            Type of model to use. Allowed NIR models are 'pca', 'wien',
+            'planck'. Allow UV models are 'pca'. The PCA model is default for
+            each case.
+        filter_method : str, optional
+            Perform a filtering method before training the model to limit the
+            effect of large absorption features. Allow methods are 'monotonic'
+            and 'boxcar'. No filter is applied by default.
+        fit_range : tuple, optional
+            2-tuple of floats indicating the minimum and maximum wavelengths
+            with which to train the extrapolation model.
+        fit_method : str, optional
+            For some models (Wien, Planck) a fitting technique is applied.
+            Allowed methods are 'ls' (Least-Squares, default).
+        bounds : tuple, optional
+            Bounds on the model parameters for 'ls' fitting. This should be the
+            same format as the bounds parameter in scipy.optimize.curve_fit().
+        time : float, optional
+            (PCA) The time of observation in days past max B light. By default
+            this assumes the spectrum is at/near maximum light.
+        n_components : int, optional
+            (PCA) The number of PC eigenvectors to predict with.
+
+        Returns
+        -------
+        numpy.ndarray
+            The predicted values at wavelengths given by x_pred (if used).
+        numpy.ndarray
+            In some models (PCA) the associated wavelengths are returned in
+            addition.
+        """
+        regime = regime.lower()
+
+        data = self._filter(self.data, *args, **kwargs)
+
+        if regime == 'nir':
+            model = self._get_NIR_model(data, *args, **kwargs)
+        elif regime == 'uv':
+            model = self._get_UV_model(data, *args, **kwargs)
         else:
             raise RuntimeError('Unknown wavelength regime.')
 
-    def _predict_NIR(self, extrap_method=None, *args, **kwargs):
-        extrap_method = check_method(extrap_method, _NIR_methods)
+        # TODO: Add extra attributes from specific model to SNEx model here
 
-        data = self._filter(self.data, *args, **kwargs)
+        model.fit(*args, **kwargs)
+        print(f'   {model}')
+        return model.predict(*args, **kwargs)
+
+    def _get_NIR_model(self, data, extrap_method=None, *args, **kwargs):
+        if extrap_method is None:
+            extrap_method = _default_NIR
+        extrap_method = extrap_method.lower()
 
         if extrap_method == 'wien':
             print('Predicting with Wien model...')
@@ -42,15 +92,18 @@ class SNEx:
             print('Predicting with NIR PCA model...')
             model = PCA('nir', data=data, *args, **kwargs)
 
-        # TODO: Add extra attributes from specific model to SNEx model here
+        return model
 
-        model.fit(*args, **kwargs)
-        print(f'   {model}')
-        return model.predict(*args, **kwargs)
+    def _get_UV_model(self, data, extrap_method=None, *args, **kwargs):
+        if extrap_method is None:
+            extrap_method = _default_UV
+        extrap_method = extrap_method.lower()
 
-    def _predict_UV(self, x_pred=None, fit_range=None, fit_method=None,
-                    extrap_method=None, filter_method=None, *args, **kwargs):
-        extrap_method = check_method(extrap_method, _UV_method)
+        if extrap_method == 'pca':
+            print('Predicting with NIR PCA model...')
+            model = PCA('uv', data=data, *args, **kwargs)
+
+        return model
 
     def _filter(self, data, filter_method=None, *args, **kwargs):
         if filter_method is None:

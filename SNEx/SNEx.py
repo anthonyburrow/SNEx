@@ -1,7 +1,6 @@
 from .models import Wien, Planck, PCA
 from .util.filter import monotonic
 from .util.io import read_spectrum
-from .util.misc import check_method
 
 _default_NIR = 'pca'
 _default_UV = ''

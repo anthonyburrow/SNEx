@@ -35,9 +35,20 @@ class PCA(ExtrapolationModel):
 
         time = self._select_model_time(time)
 
-        self._model, self._model_mean = self._load_model(regime, time)
-        self.n_components = self._model.n_components_ if n_components is None \
-            else n_components
+        self._model_vectors, self._model_mean, self._model_var = \
+            self._load_model(regime, time)
+
+        total_components = len(self._model_vectors)
+        if n_components is not None:
+            if n_components > len(self._model_vectors):
+                print(f'`n_components` must be less than {total_components}.')
+                self.n_components = total_components
+            else:
+                self.n_components = n_components
+        else:
+            self.n_components = total_components
+
+        self._model_vectors = self._model_vectors[:self.n_components]
 
         self._x_pred = self._get_x_pred(regime, time)
 
@@ -50,15 +61,19 @@ class PCA(ExtrapolationModel):
         interp_flux, var = spex.predict(self._x_pred[fit_mask])
 
         # Get eigenvalues (params) for observed region
-        fit_vectors = self._model.components_[:self.n_components, fit_mask]
+        fit_vectors = self._model_vectors[:, fit_mask]
 
         self._params = fit_vectors @ (interp_flux - self._model_mean[fit_mask])
 
     def predict(self, *args, **kwargs):
-        return self._max_flux * self.function(self._params), self._x_pred
+        y_pred = self._max_flux * self.function(self._params)
+
+        y_err = self._max_flux * np.sqrt(self._model_var)
+
+        return y_pred, y_err, self._x_pred
 
     def function(self, eigenvalues):
-        eigenvectors = self._model.components_[:self.n_components]
+        eigenvectors = self._model_vectors
         y_pred = (eigenvalues * eigenvectors.T).sum(axis=1)
         y_pred += self._model_mean
         return y_pred
@@ -85,3 +100,6 @@ class PCA(ExtrapolationModel):
 
         ind = np.abs(np.array(_available_times) - time).argmin()
         return _available_times[ind]
+
+    def _calc_variance(self):
+        pass

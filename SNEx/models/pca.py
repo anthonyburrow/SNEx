@@ -35,13 +35,19 @@ class PCA(ExtrapolationModel):
 
         time = self._select_model_time(time)
 
+        self._x_pred = self._get_x_pred(regime, time)
+        self._variance = np.zeros_like(self._x_pred)
+
+        # Load model information
         self._model_vectors, self._model_mean, self._model_var = \
             self._load_model(regime, time)
 
         total_components = len(self._model_vectors)
         if n_components is not None:
             if n_components > len(self._model_vectors):
-                print(f'`n_components` must be less than {total_components}.')
+                msg = (f'n_components must be less than {total_components}.'
+                       f' Setting n_components to {total_components}')
+                print(msg)
                 self.n_components = total_components
             else:
                 self.n_components = n_components
@@ -50,32 +56,32 @@ class PCA(ExtrapolationModel):
 
         self._model_vectors = self._model_vectors[:self.n_components]
 
-        self._x_pred = self._get_x_pred(regime, time)
-
-    def fit(self, *args, **kwargs):
+    def fit(self, calc_var=True, *args, **kwargs):
         # Get interpolated flux at PCA wavelengths
         fit_mask = (self.data[0, 0] <= self._x_pred) & \
                    (self._x_pred <= self.data[-1, 0])
 
         spex = Spextractor(self.data, auto_prune=False, verbose=False)
-        interp_flux, var = spex.predict(self._x_pred[fit_mask])
+        interp_flux, interp_var = spex.predict(self._x_pred[fit_mask])
+        interp_flux -= self._model_mean[fit_mask]
 
         # Get eigenvalues (params) for observed region
         fit_vectors = self._model_vectors[:, fit_mask]
 
-        self._params = fit_vectors @ (interp_flux - self._model_mean[fit_mask])
+        self._params = self._fit_function(interp_flux, fit_vectors)
+        if calc_var:
+            self._variance = self._calc_variance(interp_flux, interp_var,
+                                                 fit_vectors, *args, **kwargs)
 
     def predict(self, *args, **kwargs):
-        y_pred = self._max_flux * self.function(self._params)
+        y_pred = self._max_flux * (self.function(self._params) + self._model_mean)
 
-        y_err = self._max_flux * np.sqrt(self._model_var)
+        y_err = self._max_flux * np.sqrt(self._model_var + self._variance)
 
         return y_pred, y_err, self._x_pred
 
     def function(self, eigenvalues):
-        eigenvectors = self._model_vectors
-        y_pred = (eigenvalues * eigenvectors.T).sum(axis=1)
-        y_pred += self._model_mean
+        y_pred = self._model_vectors.T @ eigenvalues.T
         return y_pred
 
     def __str__(self):
@@ -101,5 +107,19 @@ class PCA(ExtrapolationModel):
         ind = np.abs(np.array(_available_times) - time).argmin()
         return _available_times[ind]
 
-    def _calc_variance(self):
-        pass
+    def _fit_function(self, flux, eigenvectors):
+        return eigenvectors @ flux.T
+
+    def _calc_variance(self, flux, var, eigenvectors, var_iter=200,
+                       *args, **kwargs):
+        print(f'Iterating over {var_iter} PCA fits...')
+
+        # Fit a distribution of spectra sampled from original
+        # spectrum uncertainties
+        samples = np.random.normal(loc=flux, scale=np.sqrt(var),
+                                   size=(var_iter, len(flux)))
+
+        eigenvalues = self._fit_function(eigenvectors, samples)
+        predictions = self.function(eigenvalues)
+
+        return predictions.var(axis=1)

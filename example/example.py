@@ -23,7 +23,7 @@ x_pred = np.linspace(4100., 12500., 500)
 
 y_pca, y_err_pca, x_pca = model.predict(regime='NIR', time=0.,
                                         fit_range=fit_range,
-                                        extrap_method='pca', n_components=4,
+                                        extrap_method='pca', n_components=7,
                                         calc_var=False, var_iter=200)
 
 fig, ax = plt.subplots()

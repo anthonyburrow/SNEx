@@ -55,6 +55,7 @@ class PCA(ExtrapolationModel):
             self.n_components = total_components
 
         self._model_vectors = self._model_vectors[:self.n_components]
+        self._model_var = self._model_var[self.n_components - 1]
 
     def fit(self, calc_var=True, *args, **kwargs):
         # Get interpolated flux at PCA wavelengths

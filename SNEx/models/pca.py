@@ -8,22 +8,6 @@ from .extrapolationmodel import ExtrapolationModel
 
 # Model information
 _available_times = (0, 2, 4, 6)
-_n_points = 250
-
-_nir_model_ranges = {
-    0: (5500., 8965.),
-    2: (5500., 9075.),
-    4: (5500., 9003.),
-    6: (5500., 8632.),
-}
-
-_uv_model_ranges = {
-    0: (3687., 5500.),
-    2: (3444., 5500.),
-    4: (3466., 5500.),
-    6: (3732., 5500.),
-}
-
 
 _model_dir = f'{dirname(__file__)}/PCA_models'
 
@@ -35,17 +19,14 @@ class PCA(ExtrapolationModel):
 
         time = self._select_model_time(time)
 
-        self._x_pred = self._get_x_pred(regime, time)
-        self._variance = np.zeros_like(self._x_pred)
-
         # Load model information
-        self._model_vectors, self._model_mean, self._model_var = \
-            self._load_model(regime, time)
+        self._model = self._load_model(regime, time)
+        self._variance = np.zeros(self._model.n_points)
 
-        total_components = len(self._model_vectors)
+        total_components = self._model.n_components
         if n_components is not None:
-            if n_components > len(self._model_vectors):
-                msg = (f'n_components must be less than {total_components}.'
+            if n_components > total_components:
+                msg = (f'n_components cannot be greater than {total_components}.'
                        f' Setting n_components to {total_components}')
                 print(msg)
                 self.n_components = total_components
@@ -54,32 +35,44 @@ class PCA(ExtrapolationModel):
         else:
             self.n_components = total_components
 
-        self._model_vectors = self._model_vectors[:self.n_components]
-        self._model_var = self._model_var[self.n_components - 1]
+        self._model_vectors = self._model.eigenvectors[:self.n_components]
 
     def fit(self, calc_var=True, *args, **kwargs):
         # Get interpolated flux at PCA wavelengths
-        fit_mask = (self.data[0, 0] <= self._x_pred) & \
-                   (self._x_pred <= self.data[-1, 0])
+        fit_mask = (self.data[0, 0] <= self._model.wave) & \
+                   (self._model.wave <= self.data[-1, 0])
 
         spex = Spextractor(self.data, auto_prune=False, verbose=False)
-        interp_flux, interp_var = spex.predict(self._x_pred[fit_mask])
-        interp_flux -= self._model_mean[fit_mask]
+        interp_flux, interp_var = spex.predict(self._model.wave[fit_mask])
+        interp_flux, interp_var = self._model.scale(interp_flux, interp_var,
+                                                    fit_mask)
 
         # Get eigenvalues (params) for observed region
         fit_vectors = self._model_vectors[:, fit_mask]
 
         self._params = self._fit_function(interp_flux, fit_vectors)
         if calc_var:
-            self._variance = self._calc_variance(interp_flux, interp_var,
-                                                 fit_vectors, *args, **kwargs)
+            # Variance from model's ability to predict training data outside
+            # the fit mask with n_components eigenvectors
+            model_var = self._model.calc_var(fit_mask, self.n_components)
+
+            # Variance due to uncertainty in data causing potential differences
+            # in fitting parameters (eigenvalues)
+            data_var = self._calc_variance(interp_flux, interp_var,
+                                           fit_vectors, *args, **kwargs)
+
+            self._variance = model_var + data_var
 
     def predict(self, *args, **kwargs):
-        y_pred = self._max_flux * (self.function(self._params) + self._model_mean)
+        y_pred, y_var_pred = \
+            self._model.descale(self.function(self._params), self._variance)
+        y_pred *= self._max_flux
+        y_err = self._max_flux * np.sqrt(y_var_pred)
 
-        y_err = self._max_flux * np.sqrt(self._model_var + self._variance)
+        # y_pred = self._max_flux * (self.function(self._params) + self._model_mean)
+        # y_err = self._max_flux * np.sqrt(self._model_var + self._variance)
 
-        return y_pred, y_err, self._x_pred
+        return y_pred, y_err, self._model.wave
 
     def function(self, eigenvalues):
         y_pred = self._model_vectors.T @ eigenvalues.T
@@ -93,14 +86,6 @@ class PCA(ExtrapolationModel):
         with open(fn, 'rb') as file:
             return pickle.load(file)
 
-    def _get_x_pred(self, regime, time):
-        if regime == 'nir':
-            wave_range = _nir_model_ranges[time]
-        elif regime == 'uv':
-            wave_range == _uv_model_ranges[time]
-
-        return np.linspace(*wave_range, _n_points)
-
     def _select_model_time(self, time):
         if time is None:
             return 0
@@ -111,7 +96,7 @@ class PCA(ExtrapolationModel):
     def _fit_function(self, flux, eigenvectors):
         return eigenvectors @ flux.T
 
-    def _calc_variance(self, flux, var, eigenvectors, var_iter=200,
+    def _calc_variance(self, flux, var, eigenvectors, var_iter=1000,
                        *args, **kwargs):
         print(f'Iterating over {var_iter} PCA fits...')
 

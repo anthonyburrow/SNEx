@@ -30,6 +30,7 @@ class PCAModel:
 
         new_flux = flux * std + mean
         new_flux_var = flux_var * std**2
+
         return new_flux, new_flux_var
 
     def scale(self, flux, flux_var, mask=None):
@@ -38,6 +39,7 @@ class PCAModel:
 
         new_flux = (flux - mean) / std
         new_flux_var = flux_var / std**2
+
         return new_flux, new_flux_var
 
     def calc_eig(self):
@@ -48,7 +50,7 @@ class PCAModel:
             print('Uncertainty detected; generating EMPCA model')
             weights = 1. / self.flux_var_train
             pca = empca.empca(self.flux_train, weights=weights, niter=25,
-                              nvec=self.n_components)
+                              nvec=self.n_components, silent=True)
             self.eigenvalues = pca.coeff
             self.eigenvectors = pca.eigvec
             self.explained_var = [pca.R2vec(i) for i in range(self.n_components)]

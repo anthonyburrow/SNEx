@@ -12,13 +12,13 @@ wave_range = None
 model = SNEx(fn, wave_range=wave_range)
 
 # Check if < 5500 breaks this
-fit_range = (5500., 7000.)
+fit_range = (5500., 6500.)
 
 x_pred = np.linspace(4100., 12500., 500)
 
 y_pca, y_err_pca, x_pca = model.predict(regime='NIR', time=0.,
                                         fit_range=fit_range,
-                                        extrap_method='pca', n_components=10,
+                                        extrap_method='pca', n_components=8,
                                         calc_var=True)
 
 fig, ax = plt.subplots()

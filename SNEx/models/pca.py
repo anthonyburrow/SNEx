@@ -35,8 +35,6 @@ class PCA(ExtrapolationModel):
         else:
             self.n_components = total_components
 
-        self._model_vectors = self._model.eigenvectors[:self.n_components]
-
     def fit(self, calc_var=True, *args, **kwargs):
         # Get interpolated flux at PCA wavelengths
         fit_mask = (self.data[0, 0] <= self._model.wave) & \
@@ -48,20 +46,23 @@ class PCA(ExtrapolationModel):
                                                     fit_mask)
 
         # Get eigenvalues (params) for observed region
-        fit_vectors = self._model_vectors[:, fit_mask]
+        fit_vectors = self._model.eigenvectors[:self.n_components, fit_mask]
 
         self._params = self._fit_function(interp_flux, fit_vectors)
-        if calc_var:
-            # Variance from model's ability to predict training data outside
-            # the fit mask with n_components eigenvectors
-            model_var = self._model.calc_var(fit_mask, self.n_components)
 
-            # Variance due to uncertainty in data causing potential differences
-            # in fitting parameters (eigenvalues)
-            data_var = self._calc_variance(interp_flux, interp_var,
-                                           fit_vectors, *args, **kwargs)
+        if not calc_var:
+            return
 
-            self._variance = model_var + data_var
+        # Variance from model's ability to predict training data outside
+        # the fit mask with n_components eigenvectors
+        model_var = self._model.calc_var(fit_mask, self.n_components)
+
+        # Variance due to uncertainty in data causing potential differences
+        # in fitting parameters (eigenvalues)
+        data_var = self._calc_variance(interp_flux, interp_var,
+                                       fit_vectors, *args, **kwargs)
+
+        self._variance = model_var + data_var
 
     def predict(self, *args, **kwargs):
         y_pred, y_var_pred = \
@@ -75,7 +76,7 @@ class PCA(ExtrapolationModel):
         return y_pred, y_err, self._model.wave
 
     def function(self, eigenvalues):
-        y_pred = self._model_vectors.T @ eigenvalues.T
+        y_pred = self._model.eigenvectors[:self.n_components].T @ eigenvalues.T
         return y_pred
 
     def __str__(self):

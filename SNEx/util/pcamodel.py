@@ -28,8 +28,11 @@ class PCAModel:
         mean = self.mean if mask is None else self.mean[mask]
         std = self.std if mask is None else self.std[mask]
 
-        new_flux = flux * std + mean
-        new_flux_var = flux_var * std**2
+        # new_flux = flux * std + mean
+        # new_flux_var = flux_var * std**2
+
+        new_flux = flux + mean
+        new_flux_var = flux_var
 
         return new_flux, new_flux_var
 
@@ -37,8 +40,11 @@ class PCAModel:
         mean = self.mean if mask is None else self.mean[mask]
         std = self.std if mask is None else self.std[mask]
 
-        new_flux = (flux - mean) / std
-        new_flux_var = flux_var / std**2
+        # new_flux = (flux - mean) / std
+        # new_flux_var = flux_var / std**2
+
+        new_flux = flux - mean
+        new_flux_var = flux_var
 
         return new_flux, new_flux_var
 

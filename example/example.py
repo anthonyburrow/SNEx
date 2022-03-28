@@ -15,9 +15,9 @@ model = SNEx(fn, z=z, wave_range=wave_range)
 params = {
     'regime': 'NIR',
     'time': 0.,
-    'fit_range': (4000., 6500.),
+    'fit_range': (5000., 6500.),
     'extrap_method': 'pca',
-    'n_components': 15,
+    'n_components': 10,
     'calc_var': True
 }
 y_pca, y_err_pca, x_pca = model.predict(**params)

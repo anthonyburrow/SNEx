@@ -19,6 +19,9 @@ class ExtrapolationModel:
         except IndexError:
             y_err_obs = None
 
+        if fit_method is None:
+            fit_method = 'ls'
+
         if fit_method == 'ls':
             params, cov = least_squares(self.function, self.data[:, 0], y_obs,
                                         p0=self._params, sigma=y_err_obs,

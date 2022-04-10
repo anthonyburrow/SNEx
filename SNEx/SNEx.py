@@ -6,14 +6,11 @@ _default_NIR = 'pca'
 _default_UV = ''
 
 
-# TODO: include exctinction in SNEx init/read_spectrum
-
-
 class SNEx:
 
-    def __init__(self, data, z=None, wave_range=None, *args, **kwargs):
+    def __init__(self, data, *args, **kwargs):
         if isinstance(data, str):
-            self.data = read_spectrum(data, z, wave_range, **kwargs)
+            self.data = read_spectrum(data, *args, **kwargs)
         else:
             self.data = data
 

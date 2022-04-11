@@ -86,7 +86,7 @@ class SNEx:
             model = Planck(data, *args, **kwargs)
         elif extrap_method == 'pca':
             print('Predicting with NIR PCA model...')
-            model = PCA('nir', data=data, *args, **kwargs)
+            model = PCA(data=data, regime='nir', *args, **kwargs)
 
         return model
 

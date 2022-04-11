@@ -96,6 +96,7 @@ class PCA(ExtrapolationModel):
             mask += sub_mask
 
         self.data = self.data[mask]
+        self._max_flux = self.data[:, 1].max()
 
     def _fit_function(self, flux, eigenvectors):
         return eigenvectors @ flux.T

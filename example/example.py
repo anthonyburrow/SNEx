@@ -18,8 +18,10 @@ model = SNEx(fn, z=z, wave_range=wave_range)
 params = {
     'regime': 'NIR',
     'time': 0.,
-    'fit_range': (4000., 6500.),
     'extrap_method': 'pca',
+    'predict_range': (5500., 8000.),
+    'predict_features': None,
+    'fit_features': ('Si II 6355', ),
     'n_components': 10,
     'calc_var': True
 }

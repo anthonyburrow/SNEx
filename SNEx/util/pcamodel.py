@@ -15,6 +15,10 @@ class PCAModel:
         self.n_points = len(wave)
 
         # Preprocess training data
+        max_flux = self.flux_train.max(axis=1)
+        self.flux_train = (self.flux_train.T / max_flux).T
+        self.flux_var_train = (self.flux_var_train.T / max_flux**2).T
+
         self.mean = self.flux_train.mean(axis=0)
         self.std = self.flux_train.std(axis=0)
         self.flux_train, self.flux_var_train = self.scale(self.flux_train,

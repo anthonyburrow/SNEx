@@ -4,23 +4,22 @@ from spextractor import Spextractor
 from os.path import dirname
 
 from .extrapolationmodel import ExtrapolationModel
+from ..util.pcamodel_gen import gen_model
+from ..util.feature_ranges import feature_ranges
 
-
-# Model information
-_available_times = (0, 2, 4, 6)
 
 _model_dir = f'{dirname(__file__)}/PCA_models'
 
 
 class PCA(ExtrapolationModel):
 
-    def __init__(self, regime, time=None, n_components=None, *args, **kwargs):
+    def __init__(self, n_components=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        time = self._select_model_time(time)
+        self._prune_fit_features(*args, **kwargs)
 
         # Load model information
-        self._model = self._load_model(regime, time)
+        self._model = gen_model(*args, **kwargs)
         self._variance = np.zeros(self._model.n_points)
 
         total_components = self._model.n_components
@@ -82,17 +81,21 @@ class PCA(ExtrapolationModel):
     def __str__(self):
         return ''
 
-    def _load_model(self, regime, time):
-        fn = f'{_model_dir}/{regime}_{time}.pkl'
-        with open(fn, 'rb') as file:
-            return pickle.load(file)
+    def _prune_fit_features(self, fit_features=None, *args, **kwargs):
+        if fit_features is None:
+            return
+        if not fit_features:
+            return
 
-    def _select_model_time(self, time):
-        if time is None:
-            return 0
+        wave = self.data[:, 0]
+        mask = np.full(len(self.data), False)
+        for feature in fit_features:
+            wave_range = feature_ranges[feature]
+            sub_mask = \
+                (wave_range[0] <= wave) & (wave <= wave_range[1])
+            mask += sub_mask
 
-        ind = np.abs(np.array(_available_times) - time).argmin()
-        return _available_times[ind]
+        self.data = self.data[mask]
 
     def _fit_function(self, flux, eigenvectors):
         return eigenvectors @ flux.T

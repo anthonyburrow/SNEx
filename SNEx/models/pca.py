@@ -103,7 +103,8 @@ class PCA(ExtrapolationModel):
 
     def _calc_variance(self, flux, var, eigenvectors, var_iter=1000,
                        *args, **kwargs):
-        print(f'Iterating over {var_iter} PCA fits...')
+        msg = f'Iterating over {var_iter} PCA fits to estimate uncertainty...'
+        print(msg)
 
         # Fit a distribution of spectra sampled from original
         # spectrum uncertainties

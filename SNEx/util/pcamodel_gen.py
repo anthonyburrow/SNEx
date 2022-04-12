@@ -137,6 +137,9 @@ def _get_spectra(interp_time, wave_mask):
     training_flux = []
     training_flux_var = []
 
+    n_single = 0
+    n_interp = 0
+
     for sn in os.listdir(_spex_interp_dir):
         spec_files = os.listdir(f'{_spex_interp_dir}/{sn}')
         spec_times = [float(fn[6:-4]) for fn in spec_files]
@@ -152,18 +155,28 @@ def _get_spectra(interp_time, wave_mask):
         if n_valid == 0:
             continue
         elif n_valid == 1:
-            print(f'Single spectrum valid for {sn}')
             if abs(spec_times[0] - interp_time) > single_time_threshold:
                 continue
+            n_single += 1
             flux = spectra[0][:, 0]
             flux_var = spectra[0][:, 1]
         elif n_valid > 1:
-            print(f'Interpolating {sn}')
+            n_interp += 1
             flux, flux_var = _get_interp_spectrum(spec_times, spectra,
                                                   interp_time)
 
         training_flux.append(flux)
         training_flux_var.append(flux_var)
+
+    msg = (
+        f'Number of single spectra within {single_time_threshold} days: '
+        f'{n_single}\n'
+        f'Number of interpolated spectra within {predict_time_threshold} days: '
+        f'{n_interp}\n'
+        f'Total sample size of PCA model: '
+        f'{n_single + n_interp}\n'
+    )
+    print(msg)
 
     return np.array(training_flux), np.array(training_flux_var)
 

@@ -1,10 +1,8 @@
-from matplotlib.pyplot import axis
 import numpy as np
 from pathlib import Path
 import os
 
 from .pcamodel import PCAModel
-from .misc import prune_data
 from .feature_ranges import feature_ranges
 
 
@@ -13,7 +11,13 @@ n_components = 15
 predict_time_threshold = 2.
 single_time_threshold = 1.
 
-_spex_interp_dir = f'{Path.home()}/dev/SNEx_gen/model_scripts/time_interp/spex'
+try:
+    _spex_interp_dir = f'{Path.home()}/dev/SNEx_gen/model_scripts/time_interp/spex'
+    if not os.path.isdir(_spex_interp_dir):
+        raise FileNotFoundError
+except FileNotFoundError:
+    _spex_interp_dir = f'C:/dev/SNEx_gen/model_scripts/time_interp/spex'
+
 
 # Defaults
 _default_nir_predict = (5500., 8000.)
@@ -160,7 +164,7 @@ def _get_spectra(interp_time, wave_mask):
 
         training_flux.append(flux)
         training_flux_var.append(flux_var)
-    
+
     return np.array(training_flux), np.array(training_flux_var)
 
 

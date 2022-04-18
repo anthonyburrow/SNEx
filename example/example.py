@@ -26,7 +26,8 @@ params = {
     'fit_features': ('Si II 5972', 'Si II 6355'),
     # 'fit_range': (5500., 7000.),
     'n_components': 10,
-    'calc_var': True
+    'calc_var': True,
+    'plot_pca': True
 }
 y_pca, y_err_pca, x_pca = model.predict(**params)
 
@@ -60,14 +61,19 @@ for feature in params['fit_features']:
     ax.axvline(wave_range[1], color='k', ls='--', lw=0.8)
 
 ax.set_xlim(3500, 9200)
-ax.set_ylim(2.e-14, 1.2e-12)
+# ax.set_ylim(2.e-14, 1.2e-12)
+ax.set_ylim(0., 1.2e-12)
 
 ax.xaxis.set_minor_locator(MultipleLocator(250))
 
 # ax.set_yscale('log')
 ax.xaxis.grid(which='both', zorder=0)
 
+ax.set_xlabel('Wavelength (A)')
+ax.set_ylabel('Flux')
+
 ax.legend()
 
+plt.tight_layout()
 fn = './example.pdf'
 fig.savefig(fn)

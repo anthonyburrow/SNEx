@@ -5,6 +5,7 @@ from os.path import dirname
 
 from .extrapolationmodel import ExtrapolationModel
 from ..util.pcamodel_gen import gen_model
+from ..util.pcaplot import plot_eigenvectors, plot_explained_var
 from ..util.feature_ranges import feature_ranges
 
 
@@ -13,7 +14,7 @@ _model_dir = f'{dirname(__file__)}/PCA_models'
 
 class PCA(ExtrapolationModel):
 
-    def __init__(self, n_components=None, *args, **kwargs):
+    def __init__(self, n_components=None, plot_pca=False, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         self._prune_fit_features(*args, **kwargs)
@@ -33,6 +34,9 @@ class PCA(ExtrapolationModel):
                 self.n_components = n_components
         else:
             self.n_components = total_components
+
+        if plot_pca:
+            self._plot_pca()
 
     def fit(self, calc_var=True, *args, **kwargs):
         # Get interpolated flux at PCA wavelengths
@@ -115,3 +119,7 @@ class PCA(ExtrapolationModel):
         predictions = self.function(eigenvalues)
 
         return predictions.var(axis=1)
+
+    def _plot_pca(self):
+        plot_eigenvectors(self._model)
+        plot_explained_var(self._model)

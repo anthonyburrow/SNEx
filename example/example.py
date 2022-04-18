@@ -9,13 +9,15 @@ from SNEx.util.feature_ranges import feature_ranges
 _data_dir = '../ex_data'
 
 fn = f'{_data_dir}/ptf11kly_20110910_MJD55814.43.dat'
-z = 0.001208
-host_EBV = 0.014
-host_RV = 1.4
-MW_EBV = 0.011
 
-wave_range = None
-model = SNEx(fn, z=z, wave_range=wave_range)
+read_params = {
+    'z': 0.001208,
+    'wave_range': None,
+    'host_EBV': 0.014,
+    'host_RV': 1.4,
+    'MW_EBV': 0.011
+}
+model = SNEx(fn, **read_params)
 
 params = {
     'regime': 'nir',
@@ -57,8 +59,8 @@ ax.fill_between(x_pca, y_pca - y_err_pca, y_pca + y_err_pca, color='#ff7d7d',
 for feature in params['fit_features']:
     wave_range = feature_ranges[feature]
     ax.axvspan(*wave_range, alpha=0.3)
-    ax.axvline(wave_range[0], color='k', ls='--', lw=0.8)
-    ax.axvline(wave_range[1], color='k', ls='--', lw=0.8)
+    ax.axvline(wave_range[0], color='k', ls='--', lw=0.8, zorder=10)
+    ax.axvline(wave_range[1], color='k', ls='--', lw=0.8, zorder=10)
 
 ax.set_xlim(3500, 9200)
 # ax.set_ylim(2.e-14, 1.2e-12)
@@ -69,7 +71,7 @@ ax.xaxis.set_minor_locator(MultipleLocator(250))
 # ax.set_yscale('log')
 ax.xaxis.grid(which='both', zorder=0)
 
-ax.set_xlabel('Wavelength (A)')
+ax.set_xlabel('Rest wavelength (A)')
 ax.set_ylabel('Flux')
 
 ax.legend()

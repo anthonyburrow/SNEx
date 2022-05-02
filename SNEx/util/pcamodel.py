@@ -52,6 +52,7 @@ class PCAModel:
         weighted = not np.all(self.flux_var_train == 0.) or \
             self.flux_var_train is None
 
+        weighted = False
         if weighted:
             print('Uncertainty detected; generating EMPCA model')
             weights = 1. / self.flux_var_train

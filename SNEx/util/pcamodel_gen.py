@@ -5,11 +5,12 @@ import os
 from .pcamodel import PCAModel
 from .feature_ranges import feature_ranges
 
+import matplotlib.pyplot as plt
 
 # Model properties
-n_components = 15
+n_components = 10
 predict_time_threshold = 2.
-single_time_threshold = 1.
+single_time_threshold = 2.
 
 try:
     _spex_interp_dir = f'{Path.home()}/dev/SNEx_gen/model_scripts/time_interp/spex'
@@ -86,7 +87,15 @@ def _get_interp_spectrum(times, spectra, interp_time, time_interp_method=None):
         time_interp_method = _default_interp_method
 
     if time_interp_method == 'linear':
-        return _linear_interp(times, sample_flux, sample_flux_var, interp_time)
+        interp_flux, interp_flux_var = _linear_interp(times, sample_flux,
+                                                      sample_flux_var,
+                                                      interp_time)
+
+    max_flux = interp_flux.max()
+    interp_flux /= max_flux
+    interp_flux_var /= max_flux**2
+
+    return interp_flux, interp_flux_var
 
 
 def _filter_spectrum(spec_file, interp_time, spec_time, wave_mask):
@@ -100,6 +109,7 @@ def _filter_spectrum(spec_file, interp_time, spec_time, wave_mask):
     if np.isnan(flux[:, 0]).any():
         return None
 
+    # This should move to the Spextractor interpolation process (pre-save)
     max_flux = flux[:, 0].max()
     flux[:, 0] /= max_flux
     flux[:, 1] /= max_flux**2
@@ -160,10 +170,24 @@ def _get_spectra(interp_time, wave_mask):
             n_single += 1
             flux = spectra[0][:, 0]
             flux_var = spectra[0][:, 1]
+
+            # TEST
+            fig, ax = plt.subplots()
+            ax.plot(total_wave[wave_mask], flux)
+            fig.savefig(f'./test_single/spec_{n_single}.png')
+            print(f'single {n_single} : {sn} {spec_times[0]}')
+            plt.close('all')
         elif n_valid > 1:
             n_interp += 1
             flux, flux_var = _get_interp_spectrum(spec_times, spectra,
                                                   interp_time)
+
+            # TEST
+            fig, ax = plt.subplots()
+            ax.plot(total_wave[wave_mask], flux)
+            fig.savefig(f'./test_interp/spec_{n_interp}.png')
+            print(f'interp {n_interp} : {sn} {spec_times}')
+            plt.close('all')
 
         training_flux.append(flux)
         training_flux_var.append(flux_var)

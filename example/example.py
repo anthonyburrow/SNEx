@@ -27,7 +27,7 @@ params = {
     # 'predict_features': ['Si II 6355'],
     'fit_features': ('Si II 5972', 'Si II 6355'),
     # 'fit_range': (5500., 7000.),
-    'n_components': 10,
+    'n_components': 8,
     'calc_var': True,
     'plot_pca': True
 }

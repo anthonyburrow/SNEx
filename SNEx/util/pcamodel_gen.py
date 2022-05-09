@@ -117,12 +117,24 @@ def _filter_spectrum(spec_file, interp_time, spec_time, wave_mask):
     return flux
 
 
-def _get_wave_mask(predict_range=None, predict_features=None, regime=None,
-                   *args, **kwargs):
+def _get_wave_mask(regime=None, predict_range=None, predict_features=None,
+                   fit_features=None, fit_range=None, *args, **kwargs):
     '''Get overall mask for where we want to actually predict at.'''
     if predict_features is not None and predict_features:
         mask = np.full(total_n_points, False)
         for feature in predict_features:
+            wave_range = feature_ranges[feature]
+            sub_mask = \
+                (wave_range[0] <= total_wave) & (total_wave <= wave_range[1])
+            mask += sub_mask
+
+        if fit_features is None:
+            sub_mask = \
+                (fit_range[0] <= total_wave) & (total_wave <= fit_range[1])
+            mask += sub_mask
+            return mask
+
+        for feature in fit_features:
             wave_range = feature_ranges[feature]
             sub_mask = \
                 (wave_range[0] <= total_wave) & (total_wave <= wave_range[1])
@@ -172,22 +184,28 @@ def _get_spectra(interp_time, wave_mask):
             flux_var = spectra[0][:, 1]
 
             # TEST
-            fig, ax = plt.subplots()
-            ax.plot(total_wave[wave_mask], flux)
-            fig.savefig(f'./test_single/spec_{n_single}.png')
-            print(f'single {n_single} : {sn} {spec_times[0]}')
-            plt.close('all')
+            # fig, ax = plt.subplots(dpi=150)
+            # ax.plot(total_wave[wave_mask], flux)
+            # flux_err = np.sqrt(flux_var)
+            # ax.fill_between(total_wave[wave_mask], flux - flux_err,
+            #                 flux + flux_err, alpha=0.3, color='grey')
+            # fig.savefig(f'./test_single/spec_{n_single}.png', dpi=150)
+            # print(f'single {n_single} : {sn} {spec_times[0]}')
+            # plt.close('all')
         elif n_valid > 1:
             n_interp += 1
             flux, flux_var = _get_interp_spectrum(spec_times, spectra,
                                                   interp_time)
 
             # TEST
-            fig, ax = plt.subplots()
-            ax.plot(total_wave[wave_mask], flux)
-            fig.savefig(f'./test_interp/spec_{n_interp}.png')
-            print(f'interp {n_interp} : {sn} {spec_times}')
-            plt.close('all')
+            # fig, ax = plt.subplots(dpi=150)
+            # ax.plot(total_wave[wave_mask], flux)
+            # flux_err = np.sqrt(flux_var)
+            # ax.fill_between(total_wave[wave_mask], flux - flux_err,
+            #                 flux + flux_err, alpha=0.3, color='grey')
+            # fig.savefig(f'./test_interp/spec_{n_interp}.png', dpi=150)
+            # print(f'interp {n_interp} : {sn} {spec_times}')
+            # plt.close('all')
 
         training_flux.append(flux)
         training_flux_var.append(flux_var)

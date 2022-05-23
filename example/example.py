@@ -1,7 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MultipleLocator
-from scipy.stats import chisquare
 
 from SNEx import SNEx
 from SNEx.util.feature_ranges import feature_ranges
@@ -20,8 +19,6 @@ read_params = {
     'MW_EBV': 0.011
 }
 model = SNEx(fn, **read_params)
-spex = Spextractor(fn, z=0.001208, wave_range=(4500., 9000.), host_EBV=0.014,
-                   host_RV=1.4, MW_EBV=0.011)
 
 params = {
     'regime': 'nir',
@@ -48,14 +45,18 @@ y_pca, y_err_pca, x_pca = model.predict(**params)
 # y_planck = model.predict(x_pred=x_planck, **params)
 
 # Interpolation
+read_params['wave_range'] = (5500., 12000.)
+spex = Spextractor(fn, **read_params)
+
 y_interp, y_var_interp = spex.predict(x_pca)
 y_interp *= spex.fmax_out
 y_var_interp *= spex.fmax_out**2
 
 mask = x_pca > params['predict_range'][0]
 offset = (y_pca[mask] / y_interp[mask])
+print(f'Offset: {offset.mean()} +- {offset.std()}')
 
-const_offset = offset[0]
+const_offset = offset.mean()
 y_pca[mask] /= const_offset
 y_err_pca[mask] /= const_offset
 
@@ -133,5 +134,5 @@ fig.savefig(fn)
 
 
 # Testing
-chisq = ((y_interp - y_pca)**2 / y_err_pca**2).sum() / (len(x_pca) - 1)
-print(chisq)
+# chisq = ((y_interp - y_pca)**2 / y_err_pca**2).sum() / (len(x_pca) - 1)
+# print(chisq)

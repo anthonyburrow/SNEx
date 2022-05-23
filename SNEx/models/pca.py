@@ -70,13 +70,12 @@ class PCA(ExtrapolationModel):
     def predict(self, *args, **kwargs):
         y_pred, y_var_pred = \
             self._model.descale(self.function(self._params), self._variance)
-        y_pred *= self._max_flux
         y_err = self._max_flux * np.sqrt(y_var_pred)
 
         # y_pred = self._max_flux * (self.function(self._params) + self._model_mean)
         # y_err = self._max_flux * np.sqrt(self._model_var + self._variance)
 
-        return y_pred, y_err, self._model.wave
+        return y_pred * self._max_flux, y_err, self._model.wave
 
     def function(self, eigenvalues):
         y_pred = self._model.eigenvectors[:self.n_components].T @ eigenvalues.T

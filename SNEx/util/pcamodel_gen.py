@@ -5,111 +5,65 @@ import os
 from .pcamodel import PCAModel
 from .feature_ranges import feature_ranges
 
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 
 # Model properties
-n_components = 10
-predict_time_threshold = 2.
-single_time_threshold = 2.
+n_components = 8
+time_threshold = 5.
 
 try:
-    _spex_interp_dir = f'{Path.home()}/dev/SNEx_gen/model_scripts/time_interp/spex'
-    if not os.path.isdir(_spex_interp_dir):
+    _snexgen_dir = f'{Path.home()}/dev/SNEx_gen'
+    if not os.path.isdir(_snexgen_dir):
         raise FileNotFoundError
 except FileNotFoundError:
-    _spex_interp_dir = f'C:/dev/SNEx_gen/model_scripts/time_interp/spex'
+    _snexgen_dir = f'C:/dev/SNEx_gen'
 
+_spex_interp_dir = f'{_snexgen_dir}/model_scripts/time_interp/spex'
 
 # Defaults
 _default_nir_predict = (5500., 8000.)
 _default_uv_predict = (3800., 5500.)
-_default_interp_method = 'linear'
 
-# Same wave range from spextractor interpolation
-total_wave_range = (3500., 10000.)
-total_n_points = 2000
+# Get wave ranges from spextractor interpolation
+csp_total_wave_range = (3500., 10000.)
+csp_total_n_points = 2000
 
-total_wave = np.linspace(*total_wave_range, total_n_points)
+nir_total_wave_range = (7500., 24000.)
+nir_total_n_points = 1500
 
+# Account for overlap, setup complete wavelength array
+csp_nir_cutoff = 8500.
 
-def _linear_interp(times, sample_flux, sample_flux_var, interp_time):
-    ind = np.searchsorted(times, interp_time)
+csp_total_wave = np.linspace(*csp_total_wave_range, csp_total_n_points)
+nir_total_wave = np.linspace(*nir_total_wave_range, nir_total_n_points)
 
-    if ind == 0:
-        endpoints = [0, 1]
-    elif ind == len(times):
-        endpoints = [-2, -1]
-    else:
-        endpoints = [ind - 1, ind]
+csp_cutoff_mask = csp_total_wave <= csp_nir_cutoff
+nir_cutoff_mask = nir_total_wave > csp_nir_cutoff
 
-    end_times = times[endpoints]
-    end_flux = sample_flux[endpoints]
-    end_flux_var = sample_flux_var[endpoints]
+csp_total_wave = csp_total_wave[csp_cutoff_mask]
+nir_total_wave = nir_total_wave[nir_cutoff_mask]
 
-    # Flux
-    dt = end_times[1] - end_times[0]
-    dt1 = interp_time - end_times[0]
-    dt2 = end_times[1] - interp_time
-    slope = (end_flux[1] - end_flux[0]) / dt
-    interp_flux = slope * dt1 + end_flux[0]
-
-    # Flux variance
-    slope_var = end_flux_var.sum(axis=0) / dt**2
-
-    # Extend variance for the closest endpoint
-    if abs(interp_time - end_times[0]) < abs(interp_time - end_times[1]):
-        interp_flux_var = dt1**2 * slope_var + end_flux_var[0]
-    else:
-        interp_flux_var = dt2**2 * slope_var + end_flux_var[1]
-
-    return interp_flux, interp_flux_var
+# total_wave = np.concatenate((csp_total_wave, nir_total_wave))
+# total_n_points = len(total_wave)
 
 
-def _get_interp_spectrum(times, spectra, interp_time, time_interp_method=None):
-    n_samples = len(spectra)
-    n_points = len(spectra[0])
-    sample_flux = np.zeros((n_samples, n_points))
-    sample_flux_var = np.zeros((n_samples, n_points))
-
-    times = np.array(times)
-    sorted_ind = times.argsort()
-
-    for i in range(n_samples):
-        sample_flux[i] = spectra[i][:, 0]
-        sample_flux_var[i] = spectra[i][:, 1]
-
-    # Make sure they are in time-wise order
-    times = times[sorted_ind]
-    sample_flux = sample_flux[sorted_ind]
-    sample_flux_var = sample_flux_var[sorted_ind]
-
-    if time_interp_method is None:
-        time_interp_method = _default_interp_method
-
-    if time_interp_method == 'linear':
-        interp_flux, interp_flux_var = _linear_interp(times, sample_flux,
-                                                      sample_flux_var,
-                                                      interp_time)
-
-    max_flux = interp_flux.max()
-    interp_flux /= max_flux
-    interp_flux_var /= max_flux**2
-
-    return interp_flux, interp_flux_var
+# TODO: Plot data set
 
 
 def _filter_spectrum(spec_file, interp_time, spec_time, wave_mask):
-    # Only use spectra within predict_time_threshold
-    if abs(spec_time - interp_time) > predict_time_threshold:
+    # Only use spectra within +- time_threshold
+    if abs(spec_time - interp_time) > time_threshold:
         return None
 
     flux = np.loadtxt(spec_file)
 
+    # Only use spectra with the prediction + fitting wavelengths
     flux = flux[wave_mask]
     if np.isnan(flux[:, 0]).any():
         return None
 
-    # This should move to the Spextractor interpolation process (pre-save)
+    # Ensure normalization
+    # (This should move to the Spextractor interpolation process, pre-save)
     max_flux = flux[:, 0].max()
     flux[:, 0] /= max_flux
     flux[:, 1] /= max_flux**2
@@ -117,32 +71,22 @@ def _filter_spectrum(spec_file, interp_time, spec_time, wave_mask):
     return flux
 
 
+def _between_mask(wavelengths, wave_range):
+    return (wave_range[0] <= wavelengths) & (wavelengths <= wave_range[1])
+
+
 def _get_wave_mask(regime=None, predict_range=None, predict_features=None,
                    fit_features=None, fit_range=None, *args, **kwargs):
     '''Get overall mask for where we want to actually predict at.'''
+    csp_mask = np.full(len(csp_total_wave), False)
+    nir_mask = np.full(len(nir_total_wave), False)
+
     if predict_features is not None and predict_features:
-        mask = np.full(total_n_points, False)
         for feature in predict_features:
             wave_range = feature_ranges[feature]
-            sub_mask = \
-                (wave_range[0] <= total_wave) & (total_wave <= wave_range[1])
-            mask += sub_mask
-
-        if fit_features is None:
-            sub_mask = \
-                (fit_range[0] <= total_wave) & (total_wave <= fit_range[1])
-            mask += sub_mask
-            return mask
-
-        for feature in fit_features:
-            wave_range = feature_ranges[feature]
-            sub_mask = \
-                (wave_range[0] <= total_wave) & (total_wave <= wave_range[1])
-            mask += sub_mask
-
-        return mask
-
-    if predict_range is None:
+            csp_mask += _between_mask(csp_total_wave, wave_range)
+            nir_mask += _between_mask(nir_total_wave, wave_range)
+    elif predict_range is None:
         if regime is None:
             regime = 'nir'
         regime = regime.lower()
@@ -151,72 +95,154 @@ def _get_wave_mask(regime=None, predict_range=None, predict_features=None,
         elif regime == 'uv':
             predict_range = _default_uv_predict
 
-    mask = (predict_range[0] <= total_wave) & (total_wave <= predict_range[1])
-    return mask
+    if predict_range is not None:
+        csp_mask += _between_mask(csp_total_wave, predict_range)
+        nir_mask += _between_mask(nir_total_wave, predict_range)
+
+    if fit_features is not None and fit_features:
+        for feature in fit_features:
+            wave_range = feature_ranges[feature]
+            csp_mask += _between_mask(csp_total_wave, wave_range)
+            nir_mask += _between_mask(nir_total_wave, wave_range)
+
+    if fit_range is not None:
+        csp_mask += _between_mask(csp_total_wave, fit_range)
+        nir_mask += _between_mask(nir_total_wave, fit_range)
+
+    return csp_mask, nir_mask
 
 
-def _get_spectra(interp_time, wave_mask):
+def _choose_spectrum(data_set, sn, predict_time, wave_mask):
+    if data_set == 'csp':
+        cutoff_mask = csp_cutoff_mask
+        sn_dir = f'{_spex_interp_dir}/csp/{sn}'
+    elif data_set == 'nir':
+        cutoff_mask = nir_cutoff_mask
+        sn_dir = f'{_spex_interp_dir}/nir/{sn}'
+
+    try:
+        spec_files = os.listdir(sn_dir)
+    except FileNotFoundError:
+        return None
+    spec_files = [f for f in spec_files if f[-4:] == '.dat']
+    spec_files = [f'{sn_dir}/{f}' for f in spec_files]
+
+    # Get valid spectra for each SN, then inter/extrapolate
+    spectra = []
+    spec_times = []
+    for spec_file in spec_files:
+        spec_time = float(spec_file[len(sn_dir) + 1 + 6:-4])
+        if abs(spec_time - predict_time) > time_threshold:
+            continue
+
+        flux = np.loadtxt(spec_file)
+        flux = flux[cutoff_mask]
+        flux = flux[wave_mask]
+
+        # Don't use spectrum if ANY of the wave points are missing
+        if np.isnan(flux[:, 0]).any():
+            continue
+
+        # (This should move to the Spextractor interpolation process, pre-save)
+        max_flux = flux[:, 0].max()
+        flux[:, 0] /= max_flux
+        flux[:, 1] /= max_flux**2
+
+        spectra.append(flux)
+        spec_times.append(spec_time)
+
+    n_valid = len(spectra)
+
+    if n_valid == 0:
+        return None
+    elif n_valid == 1:
+        spectrum = spectra[0]
+    elif n_valid > 1:
+        closest_ind = abs(np.array(spec_times) - predict_time).argmin()
+        spectrum = spectra[closest_ind]
+
+    return spectrum
+
+
+def _get_spectra(predict_time, csp_wave_mask, nir_wave_mask):
     training_flux = []
     training_flux_var = []
 
-    n_single = 0
-    n_interp = 0
+    csp_dir = f'{_spex_interp_dir}/csp'
+    nir_dir = f'{_spex_interp_dir}/nir'
 
-    for sn in os.listdir(_spex_interp_dir):
-        spec_files = os.listdir(f'{_spex_interp_dir}/{sn}')
-        spec_times = [float(fn[6:-4]) for fn in spec_files]
-        spec_files = [f'{_spex_interp_dir}/{sn}/{f}' for f in spec_files]
+    is_csp = np.any(csp_wave_mask)
+    is_nir = np.any(nir_wave_mask)
 
-        # Get valid spectra for each SN, then inter/extrapolate
-        spectra = [_filter_spectrum(spec_file, interp_time, spec_time, wave_mask)
-                   for spec_file, spec_time in zip(spec_files, spec_times)]
-        spec_times = [t for t, x in zip(spec_times, spectra) if x is not None]
-        spectra = [x for x in spectra if x is not None]
-
-        n_valid = len(spectra)
-        if n_valid == 0:
+    for sn in os.listdir(csp_dir):
+        if not is_csp:
             continue
-        elif n_valid == 1:
-            if abs(spec_times[0] - interp_time) > single_time_threshold:
-                continue
-            n_single += 1
-            flux = spectra[0][:, 0]
-            flux_var = spectra[0][:, 1]
 
-            # TEST
-            # fig, ax = plt.subplots(dpi=150)
-            # ax.plot(total_wave[wave_mask], flux)
-            # flux_err = np.sqrt(flux_var)
-            # ax.fill_between(total_wave[wave_mask], flux - flux_err,
-            #                 flux + flux_err, alpha=0.3, color='grey')
-            # fig.savefig(f'./test_single/spec_{n_single}.png', dpi=150)
-            # print(f'single {n_single} : {sn} {spec_times[0]}')
-            # plt.close('all')
-        elif n_valid > 1:
-            n_interp += 1
-            flux, flux_var = _get_interp_spectrum(spec_times, spectra,
-                                                  interp_time)
+        csp_spectrum = _choose_spectrum('csp', sn, predict_time, csp_wave_mask)
+        if csp_spectrum is None:
+            continue
+        csp_flux = csp_spectrum[:, 0]
+        csp_flux_var = csp_spectrum[:, 1]
 
-            # TEST
-            # fig, ax = plt.subplots(dpi=150)
-            # ax.plot(total_wave[wave_mask], flux)
-            # flux_err = np.sqrt(flux_var)
-            # ax.fill_between(total_wave[wave_mask], flux - flux_err,
-            #                 flux + flux_err, alpha=0.3, color='grey')
-            # fig.savefig(f'./test_interp/spec_{n_interp}.png', dpi=150)
-            # print(f'interp {n_interp} : {sn} {spec_times}')
-            # plt.close('all')
+        if not is_nir:
+            training_flux.append(csp_flux)
+            training_flux_var.append(csp_flux_var)
+            continue
+
+        nir_spectrum = _choose_spectrum('nir', sn, predict_time, nir_wave_mask)
+        if nir_spectrum is None:
+            continue
+        nir_flux = nir_spectrum[:, 0]
+        nir_flux_var = nir_spectrum[:, 1]
+
+        flux = np.concatenate((csp_flux, nir_flux))
+        flux_var = np.concatenate((csp_flux_var, nir_flux_var))
+
+        training_flux.append(flux)
+        training_flux_var.append(flux_var)
+
+    for sn in os.listdir(nir_dir):
+        if is_csp:
+            continue
+
+        nir_spectrum = _choose_spectrum('nir', sn, predict_time, nir_wave_mask)
+        if nir_spectrum is None:
+            continue
+        nir_flux = nir_spectrum[:, 0]
+        nir_flux_var = nir_spectrum[:, 1]
+
+        training_flux.append(nir_flux)
+        training_flux_var.append(nir_flux_var)
+
+    msg = (
+        f'Total sample size within {time_threshold} days: '
+        f'{len(training_flux)}\n'
+    )
+    print(msg)
+
+    return np.array(training_flux), np.array(training_flux_var)
+
+
+def _get_spectra_csp(predict_time, csp_wave_mask):
+    training_flux = []
+    training_flux_var = []
+
+    csp_dir = f'{_spex_interp_dir}/csp'
+
+    for sn in os.listdir(csp_dir):
+        csp_spectrum = _choose_spectrum('csp', sn, predict_time, csp_wave_mask)
+        if csp_spectrum is None:
+            continue
+
+        flux = csp_spectrum[:, 0]
+        flux_var = csp_spectrum[:, 1]
 
         training_flux.append(flux)
         training_flux_var.append(flux_var)
 
     msg = (
-        f'Number of single spectra within {single_time_threshold} days: '
-        f'{n_single}\n'
-        f'Number of interpolated spectra within {predict_time_threshold} days: '
-        f'{n_interp}\n'
-        f'Total sample size of PCA model: '
-        f'{n_single + n_interp}\n'
+        f'Total sample size within +-{time_threshold} days: '
+        f'{len(training_flux)}\n'
     )
     print(msg)
 
@@ -225,10 +251,12 @@ def _get_spectra(interp_time, wave_mask):
 
 def gen_model(time, *args, **kwargs):
     # Establish training data
-    wave_mask = _get_wave_mask(*args, **kwargs)
-    wave = total_wave[wave_mask]
+    csp_wave_mask, nir_wave_mask = _get_wave_mask(*args, **kwargs)
+    wave = np.concatenate((csp_total_wave[csp_wave_mask],
+                           nir_total_wave[nir_wave_mask]))
 
-    training_flux, training_flux_var = _get_spectra(time, wave_mask)
+    training_flux, training_flux_var = _get_spectra(time, csp_wave_mask,
+                                                    nir_wave_mask)
 
     # Create model and calculate eigenvectors
     model = PCAModel(wave, training_flux, training_flux_var,

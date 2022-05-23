@@ -27,12 +27,11 @@ params = {
     'regime': 'nir',
     'time': 0.,
     'extrap_method': 'pca',
-    # 'predict_range': (5500., 9000.),
-    'predict_features': ['O I', 'Ca II NIR'],
-    'fit_features': ('Ca II',),
-    # 'fit_features': ('S II',),
-    # 'fit_range': (5500., 7000.),
-    'n_components': 8,
+    'fit_range': (5500., 7000.),
+    'predict_range': (8701., 12000.),
+    # 'fit_features': ('Si II 5972', 'Si II 6355'),
+    # 'predict_features': ['O I', 'Ca II NIR'],
+    'n_components': 6,
     'calc_var': True,
     'plot_pca': True
 }
@@ -48,10 +47,23 @@ y_pca, y_err_pca, x_pca = model.predict(**params)
 # }
 # y_planck = model.predict(x_pred=x_planck, **params)
 
+# Interpolation
+y_interp, y_var_interp = spex.predict(x_pca)
+y_interp *= spex.fmax_out
+y_var_interp *= spex.fmax_out**2
+
+mask = x_pca > params['predict_range'][0]
+offset = (y_pca[mask] / y_interp[mask])
+
+const_offset = offset[0]
+y_pca[mask] /= const_offset
+y_err_pca[mask] /= const_offset
+
+# Plot
 fig, ax = plt.subplots()
 
-ax.set_xlim(3500, 9200)
-ax.set_ylim(2.e-14, 1.2e-12)
+ax.set_xlim(3500., 12000.)
+# ax.set_ylim(2.e-14, 1.2e-12)
 # ax.set_ylim(0., 1.2e-12)
 
 ax.plot(model.data[:, 0], model.data[:, 1], 'k-', label='data', zorder=6)
@@ -78,11 +90,31 @@ def plot_feature(axis, feature):
     axis.text(x_pos, y_pos, feature, rotation=90., fontsize=8.)
 
 
-for feature in params['fit_features']:
-    plot_feature(ax, feature)
+def plot_range(axis, wave_range):
+    mask = (wave_range[0] <= x_pca) & (x_pca <= wave_range[1])
 
-for feature in params['predict_features']:
-    plot_feature(ax, feature)
+    x = x_pca[mask]
+    y = y_pca[mask]
+    y_err = y_err_pca[mask]
+    axis.plot(x, y, 'r-', zorder=7)
+    axis.fill_between(x, y - y_err, y + y_err, color='#ff7d7d', zorder=5)
+
+    axis.axvspan(*wave_range, alpha=0.3)
+    axis.axvline(wave_range[0], color='k', ls='--', lw=0.8, zorder=10)
+    axis.axvline(wave_range[1], color='k', ls='--', lw=0.8, zorder=10)
+
+
+try:
+    for feature in params['fit_features']:
+        plot_feature(ax, feature)
+except KeyError:
+    plot_range(ax, params['fit_range'])
+
+try:
+    for feature in params['predict_features']:
+        plot_feature(ax, feature)
+except KeyError:
+    plot_range(ax, params['predict_range'])
 
 ax.xaxis.set_minor_locator(MultipleLocator(250))
 
@@ -101,9 +133,5 @@ fig.savefig(fn)
 
 
 # Testing
-y_interp, y_var_interp = spex.predict(x_pca)
-y_interp *= spex.fmax_out
-y_var_interp *= spex.fmax_out**2
-
 chisq = ((y_interp - y_pca)**2 / y_err_pca**2).sum() / (len(x_pca) - 1)
 print(chisq)

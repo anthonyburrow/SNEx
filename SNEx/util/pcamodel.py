@@ -38,7 +38,7 @@ class PCAModel:
 
     def scale(self, flux, flux_var, mask=None):
         mean = self.mean if mask is None else self.mean[mask]
-        std = self.std if mask is None else self.std[mask]
+        # std = self.std if mask is None else self.std[mask]
 
         # new_flux = (flux - mean) / std
         # new_flux_var = flux_var / std**2

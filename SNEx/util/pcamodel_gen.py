@@ -43,9 +43,6 @@ nir_cutoff_mask = nir_total_wave > csp_nir_cutoff
 csp_total_wave = csp_total_wave[csp_cutoff_mask]
 nir_total_wave = nir_total_wave[nir_cutoff_mask]
 
-# total_wave = np.concatenate((csp_total_wave, nir_total_wave))
-# total_n_points = len(total_wave)
-
 
 # TODO: Plot data set
 
@@ -164,6 +161,33 @@ def _choose_spectrum(data_set, sn, predict_time, wave_mask):
     return spectrum
 
 
+def _scale_nir(csp_flux, csp_wave_mask, nir_flux, nir_wave_mask):
+    can_direct_scale = csp_wave_mask[-1] and nir_wave_mask[0]
+
+    if can_direct_scale:
+        return csp_flux[-1] / nir_flux[0]
+
+    # Scale using a Planck function
+    from ..SNEx import SNEx
+
+    csp_data = np.zeros((len(csp_flux), 2))
+    csp_data[:, 0] = csp_total_wave[csp_wave_mask]
+    csp_data[:, 1] = csp_flux
+
+    planck_model = SNEx(csp_data)
+    params = {
+        'regime': 'NIR',
+        'extrap_method': 'planck',
+        'filter_method': 'monotonic',
+        'bounds': ((10000., -np.inf), (30000., np.inf))
+    }
+    # Do a [0:2] slice just so x_pred will be an array; should be inconsequential
+    planck_fit = planck_model.predict(x_pred=nir_total_wave[nir_wave_mask][0:2],
+                                      **params)
+
+    return planck_fit[0] / nir_flux[0]
+
+
 def _get_spectra(predict_time, csp_wave_mask, nir_wave_mask):
     training_flux = []
     training_flux_var = []
@@ -195,6 +219,14 @@ def _get_spectra(predict_time, csp_wave_mask, nir_wave_mask):
         nir_flux = nir_spectrum[:, 0]
         nir_flux_var = nir_spectrum[:, 1]
 
+        # Put NIR data on the same scale as CSP
+        print(f'Scaling NIR data to CSP for {sn}...')
+        nir_scale_factor = _scale_nir(csp_flux, csp_wave_mask,
+                                      nir_flux, nir_wave_mask)
+        nir_flux *= nir_scale_factor
+        nir_flux_var *= nir_scale_factor**2
+
+        # Compile CSP and NIR
         flux = np.concatenate((csp_flux, nir_flux))
         flux_var = np.concatenate((csp_flux_var, nir_flux_var))
 

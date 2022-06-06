@@ -1,4 +1,11 @@
+import numpy as np
 import matplotlib.pyplot as plt
+
+
+def plot_info(pcamodel):
+    plot_eigenvectors(pcamodel)
+    plot_explained_var(pcamodel)
+    plt.close('all')
 
 
 def plot_eigenvectors(pcamodel):
@@ -22,9 +29,17 @@ def plot_eigenvectors(pcamodel):
 
 
 def plot_explained_var(pcamodel):
-    # fig, ax = plt.subplots()
+    fig, ax = plt.subplots()
 
+    pc_ids = np.arange(1, pcamodel.n_components + 1)
+    ax.plot(pc_ids, pcamodel.explained_var, 'ko')
 
-    # fn = './explained_variance.pdf'
-    # fig.savefig(fn)
-    pass
+    ax.set_yscale('log')
+    ax.set_ylim(top=1.)
+
+    ax.set_xlabel('PC')
+    ax.set_ylabel('fractional explained variance')
+
+    plt.tight_layout()
+    fn = './explained_variance.pdf'
+    fig.savefig(fn)

@@ -4,7 +4,7 @@ from os.path import dirname
 
 from .extrapolationmodel import ExtrapolationModel
 from ..util.pcamodel_gen import gen_model
-from ..util.pcaplot import plot_eigenvectors, plot_explained_var
+from ..util.pcaplot import plot_info
 from ..util.feature_ranges import feature_ranges
 
 
@@ -118,5 +118,4 @@ class PCA(ExtrapolationModel):
         return predictions.var(axis=1)
 
     def _plot_pca(self):
-        plot_eigenvectors(self._model)
-        plot_explained_var(self._model)
+        plot_info(self._model)

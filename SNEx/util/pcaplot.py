@@ -1,6 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+from .misc import setup_clean_dir
+
 
 def plot_info(pcamodel):
     plot_eigenvectors(pcamodel)
@@ -43,3 +45,24 @@ def plot_explained_var(pcamodel):
     plt.tight_layout()
     fn = './explained_variance.pdf'
     fig.savefig(fn)
+
+
+def plot_training(wave, training_flux, training_flux_var):
+    plot_dir = './training_spec'
+    setup_clean_dir(plot_dir)
+
+    fig, ax = plt.subplots()
+
+    for i in range(len(training_flux)):
+        flux = training_flux[i]
+        flux_err = np.sqrt(training_flux_var[i])
+
+        ax.plot(wave, flux, 'k-', zorder=2)
+        ax.fill_between(wave, flux - flux_err, flux + flux_err, color='grey',
+                        zorder=1)
+
+        fn = f'{plot_dir}/training_{i}.png'
+        fig.savefig(fn)
+        ax.clear()
+    
+    plt.close('all')

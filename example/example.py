@@ -23,8 +23,8 @@ params = {
     'regime': 'nir',
     'time': 0.,
     'extrap_method': 'pca',
-    'fit_range': (5500., 8499.),
-    'predict_range': (8601., 12000.),
+    'fit_range': (5500., 8600.),
+    'predict_range': (8700., 12000.),
     # 'fit_features': ('Si II 5972', 'Si II 6355'),
     # 'predict_features': ['O I', 'Ca II NIR'],
     'n_components': 6,
@@ -33,16 +33,6 @@ params = {
 }
 y_pca, y_err_pca, x_pca = model.predict(**params)
 
-# x_planck = np.linspace(4000., 9000.)
-# params = {
-#     'regime': 'NIR',
-#     'time': 0.,
-#     'fit_range': (4000., 6500.),
-#     'extrap_method': 'planck',
-#     'filter_method': 'monotonic'
-# }
-# y_planck = model.predict(x_pred=x_planck, **params)
-
 # Interpolation
 read_params['wave_range'] = (5500., 12000.)
 spex = Spextractor(fn, **read_params)
@@ -50,14 +40,6 @@ spex = Spextractor(fn, **read_params)
 y_interp, y_var_interp = spex.predict(x_pca)
 y_interp *= spex.fmax_out
 y_var_interp *= spex.fmax_out**2
-
-# mask = x_pca > params['predict_range'][0]
-# offset = (y_pca[mask] / y_interp[mask])
-# print(f'Offset: {offset.mean()} +- {offset.std()}')
-
-# const_offset = offset.mean()
-# y_pca[mask] /= const_offset
-# y_err_pca[mask] /= const_offset
 
 # Plot
 fig, ax = plt.subplots()

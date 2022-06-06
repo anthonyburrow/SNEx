@@ -7,3 +7,4 @@ model_scripts/
 testing/
 
 example/*.pdf
+example/training_spec

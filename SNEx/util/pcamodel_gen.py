@@ -3,6 +3,7 @@ from pathlib import Path
 import os
 
 from .pcamodel import PCAModel
+from .pcaplot import plot_training
 from .feature_ranges import feature_ranges
 
 # import matplotlib.pyplot as plt
@@ -289,6 +290,8 @@ def gen_model(time, *args, **kwargs):
 
     training_flux, training_flux_var = _get_spectra(time, csp_wave_mask,
                                                     nir_wave_mask)
+
+    plot_training(wave, training_flux, training_flux_var)
 
     # Create model and calculate eigenvectors
     model = PCAModel(wave, training_flux, training_flux_var,

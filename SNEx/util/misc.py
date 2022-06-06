@@ -1,3 +1,5 @@
+import os
+
 from ..util.constants import c
 
 
@@ -23,3 +25,19 @@ def prune_data(data, wave_range=None):
 
     wave_mask = (wave_range[0] < data[:, 0]) & (data[:, 0] < wave_range[1])
     return data[wave_mask]
+
+
+def setup_clean_dir(directory):
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+        return
+
+    for fn in os.listdir(directory):
+        fp = os.path.join(directory, fn)
+        try:
+            if os.path.isfile(fp) or os.path.islink(fp):
+                os.unlink(fp)
+            elif os.path.isdir(fp):
+                shutil.rmtree(fp)
+        except Exception as e:
+            print(f'Failed to delete {fp}. Reason: {e}')

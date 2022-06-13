@@ -33,11 +33,8 @@ class PCA(ExtrapolationModel):
                 self.n_components = n_components
         else:
             self.n_components = total_components
-
-        if plot_pca:
-            self._plot_pca()
         
-        self._save_info()
+        self._save_info(plot=plot_pca)
 
     def fit(self, calc_var=True, *args, **kwargs):
         # Get interpolated flux at PCA wavelengths
@@ -117,11 +114,11 @@ class PCA(ExtrapolationModel):
         eigenvalues = self._fit_function(eigenvectors, samples)
         predictions = self.function(eigenvalues)
 
-        return predictions.var(axis=1)
+        return predictions.var(axis=1)        
 
-    def _plot_pca(self):
-        plot_info(self._model)
-
-    def _save_info(self):
+    def _save_info(self, plot):
         fn = './eigenvectors.dat'
         np.savetxt(fn, self._model.eigenvectors[:self.n_components])
+
+        if plot:
+            plot_info(self._model)

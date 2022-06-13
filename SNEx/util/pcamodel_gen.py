@@ -5,7 +5,7 @@ import os
 from .pcamodel import PCAModel
 from .pcaplot import plot_training
 from .feature_ranges import feature_ranges
-from .util import between_mask
+from .misc import between_mask
 
 # import matplotlib.pyplot as plt
 
@@ -115,7 +115,7 @@ def _choose_spectrum(data_set, sn, predict_time, wave_mask):
     try:
         spec_files = os.listdir(sn_dir)
     except FileNotFoundError:
-        return None
+        return None, None
     spec_files = [f for f in spec_files if f[-4:] == '.dat']
     spec_files = [f'{sn_dir}/{f}' for f in spec_files]
 
@@ -146,14 +146,16 @@ def _choose_spectrum(data_set, sn, predict_time, wave_mask):
     n_valid = len(spectra)
 
     if n_valid == 0:
-        return None
+        return None, None
     elif n_valid == 1:
         spectrum = spectra[0]
+        time = spec_times[0]
     elif n_valid > 1:
         closest_ind = abs(np.array(spec_times) - predict_time).argmin()
         spectrum = spectra[closest_ind]
+        time = spec_times[closest_ind]
 
-    return spectrum
+    return spectrum, time
 
 
 def _scale_nir(csp_flux, csp_wave_mask, nir_flux, nir_wave_mask):
@@ -197,7 +199,7 @@ def _get_spectra(predict_time, csp_wave_mask, nir_wave_mask):
         if not is_csp:
             continue
 
-        csp_spectrum = _choose_spectrum('csp', sn, predict_time, csp_wave_mask)
+        csp_spectrum, csp_time = _choose_spectrum('csp', sn, predict_time, csp_wave_mask)
         if csp_spectrum is None:
             continue
         csp_flux = csp_spectrum[:, 0]
@@ -208,14 +210,14 @@ def _get_spectra(predict_time, csp_wave_mask, nir_wave_mask):
             training_flux_var.append(csp_flux_var)
             continue
 
-        nir_spectrum = _choose_spectrum('nir', sn, predict_time, nir_wave_mask)
+        nir_spectrum, nir_time = _choose_spectrum('nir', sn, predict_time, nir_wave_mask)
         if nir_spectrum is None:
             continue
         nir_flux = nir_spectrum[:, 0]
         nir_flux_var = nir_spectrum[:, 1]
 
         # Put NIR data on the same scale as CSP
-        print(f'Scaling NIR data to CSP for {sn}...')
+        # print(f'Scaling NIR data to CSP for {sn}...')
         nir_scale_factor = _scale_nir(csp_flux, csp_wave_mask,
                                       nir_flux, nir_wave_mask)
         nir_flux *= nir_scale_factor

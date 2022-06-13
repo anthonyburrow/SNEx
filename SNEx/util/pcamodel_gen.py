@@ -250,32 +250,6 @@ def _get_spectra(predict_time, csp_wave_mask, nir_wave_mask):
     return np.array(training_flux), np.array(training_flux_var)
 
 
-def _get_spectra_csp(predict_time, csp_wave_mask):
-    training_flux = []
-    training_flux_var = []
-
-    csp_dir = f'{_spex_interp_dir}/csp'
-
-    for sn in os.listdir(csp_dir):
-        csp_spectrum = _choose_spectrum('csp', sn, predict_time, csp_wave_mask)
-        if csp_spectrum is None:
-            continue
-
-        flux = csp_spectrum[:, 0]
-        flux_var = csp_spectrum[:, 1]
-
-        training_flux.append(flux)
-        training_flux_var.append(flux_var)
-
-    msg = (
-        f'Total sample size within +-{time_threshold} days: '
-        f'{len(training_flux)}\n'
-    )
-    print(msg)
-
-    return np.array(training_flux), np.array(training_flux_var)
-
-
 def gen_model(time, *args, **kwargs):
     # Establish training data
     csp_wave_mask, nir_wave_mask = _get_wave_mask(*args, **kwargs)

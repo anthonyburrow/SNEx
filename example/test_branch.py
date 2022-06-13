@@ -1,4 +1,3 @@
-import wave
 import numpy as np
 import matplotlib.pyplot as plt
 import os
@@ -6,7 +5,6 @@ from pathlib import Path
 
 from spextractor import Spextractor
 from SNIaDCA import GMM
-from spextractor.physics.feature import pEW
 
 
 fn = './spec_list'

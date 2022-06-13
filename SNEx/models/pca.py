@@ -119,6 +119,8 @@ class PCA(ExtrapolationModel):
     def _save_info(self, plot):
         fn = './eigenvectors.dat'
         np.savetxt(fn, self._model.eigenvectors[:self.n_components])
+        fn = './wavelengths.dat'
+        np.savetxt(fn, self._model.wave)
 
         if plot:
             plot_info(self._model)

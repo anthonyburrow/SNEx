@@ -5,6 +5,7 @@ import os
 from .pcamodel import PCAModel
 from .pcaplot import plot_training
 from .feature_ranges import feature_ranges
+from .util import between_mask
 
 # import matplotlib.pyplot as plt
 
@@ -45,9 +46,6 @@ csp_total_wave = csp_total_wave[csp_cutoff_mask]
 nir_total_wave = nir_total_wave[nir_cutoff_mask]
 
 
-# TODO: Plot data set
-
-
 def _filter_spectrum(spec_file, interp_time, spec_time, wave_mask):
     # Only use spectra within +- time_threshold
     if abs(spec_time - interp_time) > time_threshold:
@@ -69,10 +67,6 @@ def _filter_spectrum(spec_file, interp_time, spec_time, wave_mask):
     return flux
 
 
-def _between_mask(wavelengths, wave_range):
-    return (wave_range[0] <= wavelengths) & (wavelengths <= wave_range[1])
-
-
 def _get_wave_mask(regime=None, predict_range=None, predict_features=None,
                    fit_features=None, fit_range=None, *args, **kwargs):
     '''Get overall mask for where we want to actually predict at.'''
@@ -82,8 +76,8 @@ def _get_wave_mask(regime=None, predict_range=None, predict_features=None,
     if predict_features is not None and predict_features:
         for feature in predict_features:
             wave_range = feature_ranges[feature]
-            csp_mask += _between_mask(csp_total_wave, wave_range)
-            nir_mask += _between_mask(nir_total_wave, wave_range)
+            csp_mask += between_mask(csp_total_wave, wave_range)
+            nir_mask += between_mask(nir_total_wave, wave_range)
     elif predict_range is None:
         if regime is None:
             regime = 'nir'
@@ -94,18 +88,18 @@ def _get_wave_mask(regime=None, predict_range=None, predict_features=None,
             predict_range = _default_uv_predict
 
     if predict_range is not None:
-        csp_mask += _between_mask(csp_total_wave, predict_range)
-        nir_mask += _between_mask(nir_total_wave, predict_range)
+        csp_mask += between_mask(csp_total_wave, predict_range)
+        nir_mask += between_mask(nir_total_wave, predict_range)
 
     if fit_features is not None and fit_features:
         for feature in fit_features:
             wave_range = feature_ranges[feature]
-            csp_mask += _between_mask(csp_total_wave, wave_range)
-            nir_mask += _between_mask(nir_total_wave, wave_range)
+            csp_mask += between_mask(csp_total_wave, wave_range)
+            nir_mask += between_mask(nir_total_wave, wave_range)
 
     if fit_range is not None:
-        csp_mask += _between_mask(csp_total_wave, fit_range)
-        nir_mask += _between_mask(nir_total_wave, fit_range)
+        csp_mask += between_mask(csp_total_wave, fit_range)
+        nir_mask += between_mask(nir_total_wave, fit_range)
 
     return csp_mask, nir_mask
 

@@ -19,11 +19,15 @@ def wave_to_freq(wave):
     return c * 1.e8 / wave
 
 
+def between_mask(wavelengths, wave_range):
+    return (wave_range[0] <= wavelengths) & (wavelengths <= wave_range[1])
+
+
 def prune_data(data, wave_range=None):
     if wave_range is None:
         return data
 
-    wave_mask = (wave_range[0] < data[:, 0]) & (data[:, 0] < wave_range[1])
+    wave_mask = between_mask(data[:, 0], wave_range)
     return data[wave_mask]
 
 

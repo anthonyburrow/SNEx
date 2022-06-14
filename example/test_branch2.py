@@ -1,4 +1,3 @@
-from wave import Wave_read
 import numpy as np
 import matplotlib.pyplot as plt
 import os
@@ -22,7 +21,7 @@ total_n_points = 2000
 total_wave = np.linspace(*total_wave_range, total_n_points)
 
 wave_range = (5000., 7000.)
-pc_wave_range = (5700., 6400.)
+pc_wave_range = (5500., 6600.)
 
 area_mask = (wave_range[0] < total_wave) & (total_wave < wave_range[1])
 total_wave = total_wave[area_mask]
@@ -33,7 +32,6 @@ data[:, 0] = total_wave
 
 siII_6355 = 'Si II 6150A'
 siII_5972 = 'Si II 5800A'
-
 
 fn = './wavelengths.dat'
 model_wave = np.loadtxt(fn)
@@ -46,8 +44,9 @@ eigenvectors = eigenvectors[:, model_mask]
 
 time_window = 5.
 
+
 def get_params(name, time):
-    fn = f'{_spex_interp_dir}/{name}/model_{time}.dat'
+    fn = f'{_spex_interp_dir}/{name}/model_{time:.3f}.dat'
     data[:, 1:3] = np.loadtxt(fn)[area_mask]
 
     # Get Si II pEWs and velocity
@@ -77,8 +76,6 @@ def get_params(name, time):
     for eig in eigenvalues:
         params.append(eig)
 
-    print(params)
-    print(len(params))
     return params
 
 
@@ -102,13 +99,13 @@ for sn in os.listdir(_spex_interp_dir):
     # name, time, p5, p5e, p6, p6e, vsi, vsie, p(cn), p(ss), p(bl), p(cl), PCs
     all_params.append(get_params(sn, time))
 
-    test += 1
-    if test > 1:
-        break
+    # test += 1
+    # if test > 1:
+    #     break
 
 fn = './all_params.dat'
 dt = []
 for i in range(len(all_params[0])):
     dt.append('%.8f')
-head = 'name, time, p5, p5e, p6, p6e, vsi, vsie, p(cn), p(ss), p(bl), p(cl), PCs'
+head = 'time, p5, p5e, p6, p6e, vsi, vsie, p(cn), p(ss), p(bl), p(cl), PCs'
 np.savetxt(fn, all_params, fmt=dt, header=head)

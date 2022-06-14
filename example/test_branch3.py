@@ -60,10 +60,12 @@ ylim = ax.get_ylim()
 
 for i in range(4):
     col = np.array(color_map[i]) / 255.
-    ax.scatter([-1.], [-1.], s=1., c=[col], label=name_map[i])
+    ax.scatter([-1.], [-1.], s=25., c=[col], label=name_map[i])
 
 ax.set_xlim(xlim)
 ax.set_ylim(ylim)
+
+ax.legend()
 
 plt.tight_layout()
 

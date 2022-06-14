@@ -179,7 +179,7 @@ def full_prediction(name):
     ax.set_xlabel('Rest wavelength (A)')
     ax.set_ylabel('Flux')
 
-    line = ax.plot([0.], [0.], 'r-', label='PCA')
+    ax.plot([0.], [0.], 'r-', label='PCA')
     ax.legend()
 
     plt.tight_layout()

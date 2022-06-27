@@ -11,7 +11,9 @@ from .misc import between_mask
 
 # Model properties
 n_components = 8
-time_threshold = 5.
+time_threshold_0 = 5.
+time_threshold_30 = 10.
+time_threshold_min = 2.
 
 try:
     _snexgen_dir = f'{Path.home()}/dev/SNEx_gen'
@@ -46,25 +48,14 @@ csp_total_wave = csp_total_wave[csp_cutoff_mask]
 nir_total_wave = nir_total_wave[nir_cutoff_mask]
 
 
-def _filter_spectrum(spec_file, interp_time, spec_time, wave_mask):
-    # Only use spectra within +- time_threshold
-    if abs(spec_time - interp_time) > time_threshold:
-        return None
+def _calc_time_window(interp_time):
+    slope = (time_threshold_30 - time_threshold_0) / 30.
+    window = slope * interp_time + time_threshold_0
 
-    flux = np.loadtxt(spec_file)
+    if window < time_threshold_min:
+        return time_threshold_min
 
-    # Only use spectra with the prediction + fitting wavelengths
-    flux = flux[wave_mask]
-    if np.isnan(flux[:, 0]).any():
-        return None
-
-    # Ensure normalization
-    # (This should move to the Spextractor interpolation process, pre-save)
-    max_flux = flux[:, 0].max()
-    flux[:, 0] /= max_flux
-    flux[:, 1] /= max_flux**2
-
-    return flux
+    return window
 
 
 def _get_wave_mask(regime=None, predict_range=None, predict_features=None,
@@ -124,7 +115,7 @@ def _choose_spectrum(data_set, sn, predict_time, wave_mask):
     spec_times = []
     for spec_file in spec_files:
         spec_time = float(spec_file[len(sn_dir) + 1 + 6:-4])
-        if abs(spec_time - predict_time) > time_threshold:
+        if abs(spec_time - predict_time) > _calc_time_window(predict_time):
             continue
 
         flux = np.loadtxt(spec_file)
@@ -244,7 +235,7 @@ def _get_spectra(predict_time, csp_wave_mask, nir_wave_mask):
         training_flux_var.append(nir_flux_var)
 
     msg = (
-        f'Total sample size within {time_threshold} days: '
+        f'Total sample size within {_calc_time_window(predict_time)} days: '
         f'{len(training_flux)}\n'
     )
     print(msg)

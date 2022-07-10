@@ -16,7 +16,7 @@ def plot_eigenvectors(pcamodel):
     wave = pcamodel.wave
     eig = pcamodel.eigenvectors
 
-    n_comp = 4
+    n_comp = 3
     for i in range(n_comp):
         ax.plot(wave, eig[i], '-', label=f'PC{i + 1}', zorder=n_comp - i)
 
@@ -28,6 +28,8 @@ def plot_eigenvectors(pcamodel):
     plt.tight_layout()
     fn = './eigenvectors.pdf'
     fig.savefig(fn)
+    fn = './eigenvectors.png'
+    fig.savefig(fn, dpi=200)
 
 
 def plot_explained_var(pcamodel):
@@ -64,5 +66,5 @@ def plot_training(wave, training_flux, training_flux_var):
         fn = f'{plot_dir}/training_{i}.png'
         fig.savefig(fn)
         ax.clear()
-    
+
     plt.close('all')

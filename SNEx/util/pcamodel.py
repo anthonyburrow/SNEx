@@ -20,6 +20,8 @@ class PCAModel:
         self.flux_train, self.flux_var_train = self.scale(self.flux_train,
                                                           self.flux_var_train)
 
+        np.savetxt('mean.dat', self.mean)
+
         self.eigenvalues = None
         self.eigenvectors = None
         self.explained_var = None

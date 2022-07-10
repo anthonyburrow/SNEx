@@ -40,11 +40,11 @@ prediction_params = {
     'regime': 'nir',
     'time': 0.,
     'extrap_method': 'pca',
-    'fit_range': (5500., 8600.),
-    'predict_range': (8700., 12000.),
+    'fit_range': (5500., 8400.),
+    'predict_range': (8400., 23000.),
     # 'fit_features': ('Si II 5972', 'Si II 6355'),
     # 'predict_features': ['O I', 'Ca II NIR'],
-    'n_components': 6,
+    'n_components': 8,
     'calc_var': True,
     'plot_pca': False
 }
@@ -91,17 +91,20 @@ def plot_feature(axis, feature, x_pca, y_pca, y_err_pca):
 
 
 def plot_range(axis, wave_range, x_pca, y_pca, y_err_pca):
-    mask = (wave_range[0] <= x_pca) & (x_pca <= wave_range[1])
+    _x_pca = x_pca / 1e4
+    _wave_range = (wave_range[0] / 1e4, wave_range[1] / 1e4)
 
-    x = x_pca[mask]
+    mask = (_wave_range[0] <= _x_pca) & (_x_pca <= _wave_range[1])
+
+    x = _x_pca[mask]
     y = y_pca[mask]
     y_err = y_err_pca[mask]
     axis.plot(x, y, 'r-', zorder=7)
     axis.fill_between(x, y - y_err, y + y_err, color='#ff7d7d', zorder=5)
 
-    axis.axvspan(*wave_range, alpha=0.3)
-    axis.axvline(wave_range[0], color='k', ls='--', lw=0.8, zorder=10)
-    axis.axvline(wave_range[1], color='k', ls='--', lw=0.8, zorder=10)
+    axis.axvspan(*_wave_range, alpha=0.3)
+    axis.axvline(_wave_range[0], color='k', ls='--', lw=0.8, zorder=10)
+    axis.axvline(_wave_range[1], color='k', ls='--', lw=0.8, zorder=10)
 
 
 def concat_spectra(name, cutoff=8500.):
@@ -151,12 +154,12 @@ def full_prediction(name):
     # Plot
     fig, ax = plt.subplots()
 
-    ax.set_xlim(3500., 12000.)
+    ax.set_xlim(0.3500, 2.3000)
     # ax.set_ylim(2.e-14, 1.2e-12)
     # ax.set_ylim(0., 1.2e-12)
 
-    ax.plot(obs_data[:, 0], obs_data[:, 1], 'k-', label='data', zorder=6)
-    ax.fill_between(obs_data[:, 0], obs_data[:, 1] - obs_data[:, 2],
+    ax.plot(obs_data[:, 0] / 1e4, obs_data[:, 1], 'k-', label='data', zorder=6)
+    ax.fill_between(obs_data[:, 0] / 1e4, obs_data[:, 1] - obs_data[:, 2],
                     obs_data[:, 1] + obs_data[:, 2], color='#595959', zorder=4)
 
     try:
@@ -171,20 +174,25 @@ def full_prediction(name):
     except KeyError:
         plot_range(ax, prediction_params['predict_range'], x_pca, y_pca, y_err_pca)
 
-    ax.xaxis.set_minor_locator(MultipleLocator(250))
+    ax.xaxis.set_minor_locator(MultipleLocator(0.0500))
 
     ax.set_yscale('log')
     ax.xaxis.grid(which='both', zorder=0)
 
-    ax.set_xlabel('Rest wavelength (A)')
+    ax.set_xlabel('Rest wavelength [$\mu m$]')
     ax.set_ylabel('Flux')
 
-    ax.plot([0.], [0.], 'r-', label='PCA')
+    ax.axvspan(1.2963, 1.4419, alpha=0.8, color='grey', zorder=3)
+    ax.axvspan(1.7421, 1.9322, alpha=0.8, color='grey', zorder=3)
+
+    ax.plot([0.], [0.], 'r-', label='PCA reconstruction')
     ax.legend()
 
     plt.tight_layout()
     fn = f'./example_{name}.pdf'
     fig.savefig(fn)
+    fn = f'./example_{name}.png'
+    fig.savefig(fn, dpi=200)
 
 
 for sn in spec_files:

@@ -10,7 +10,7 @@ from .misc import between_mask
 # import matplotlib.pyplot as plt
 
 # Model properties
-n_components = 8
+n_components = 10
 time_threshold_0 = 5.
 time_threshold_30 = 10.
 time_threshold_min = 2.
@@ -130,6 +130,10 @@ def _choose_spectrum(data_set, sn, predict_time, wave_mask):
         max_flux = flux[:, 0].max()
         flux[:, 0] /= max_flux
         flux[:, 1] /= max_flux**2
+
+        # mean_flux = flux[:, 0].mean()
+        # flux[:, 0] /= mean_flux
+        # flux[:, 1] /= mean_flux**2
 
         spectra.append(flux)
         spec_times.append(spec_time)

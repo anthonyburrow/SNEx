@@ -7,5 +7,7 @@ model_scripts/
 testing/
 
 example/*.pdf
+example/*.png
 example/*.dat
+example/test*
 example/training_spec

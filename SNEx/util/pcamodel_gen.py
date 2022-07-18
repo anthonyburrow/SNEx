@@ -36,7 +36,7 @@ nir_total_wave_range = (7500., 24000.)
 nir_total_n_points = 1500
 
 # Account for overlap, setup complete wavelength array
-csp_nir_cutoff = 8500.
+csp_nir_cutoff = 8200.
 
 csp_total_wave = np.linspace(*csp_total_wave_range, csp_total_n_points)
 nir_total_wave = np.linspace(*nir_total_wave_range, nir_total_n_points)

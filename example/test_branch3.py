@@ -12,6 +12,9 @@ data = np.loadtxt(fn)
 mask = data[:, 3] == 0.
 data = data[~mask]
 
+mask = data[:, 2] > 5.
+data = data[~mask]
+
 z = data[:, 0]
 sbv = data[:, 1]
 time = data[:, 2]
@@ -164,5 +167,28 @@ plt.subplots_adjust(right=0.85)
 fn = 'pcs_sbv.pdf'
 fig.savefig(fn)
 fn = 'pcs_sbv.png'
+fig.savefig(fn, dpi=200)
+plt.close('all')
+
+
+# CORRELATION MATRIX - Phase
+cmin = time.min()
+cmax = time.max()
+fig, ax, scatter = correlation_matrix(n_pcs=4, colors=time, cmin=cmin, cmax=cmax)
+fig.set_size_inches(7.5, 4.8)
+
+cbar = fig.colorbar(scatter, ax=ax)
+cbar.ax.tick_params(labelsize=8.)
+cbar.set_label(label=r'$\mathrm{s_{BV}}$', size=14.)
+
+plt.tight_layout()
+pos0 = cbar.ax.get_position()
+cbar.ax.set_position([pos0.x0 + 0.1, pos0.y0, pos0.width, pos0.height])
+
+plt.subplots_adjust(right=0.85)
+
+fn = 'pcs_phase.pdf'
+fig.savefig(fn)
+fn = 'pcs_phase.png'
 fig.savefig(fn, dpi=200)
 plt.close('all')

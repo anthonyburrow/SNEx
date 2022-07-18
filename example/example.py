@@ -29,7 +29,8 @@ params = {
     # 'predict_features': ['O I', 'Ca II NIR'],
     'n_components': 8,
     'calc_var': True,
-    'plot_pca': True
+    'plot_pca': True,
+    'norm_method': 'mean'
 }
 y_pca, y_err_pca, x_pca = model.predict(**params)
 

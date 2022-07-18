@@ -1,4 +1,5 @@
 import os
+import shutil
 
 from ..util.constants import c
 
@@ -45,3 +46,12 @@ def setup_clean_dir(directory):
                 shutil.rmtree(fp)
         except Exception as e:
             print(f'Failed to delete {fp}. Reason: {e}')
+
+
+def get_normalization(flux, norm_method=None, *args, **kwargs):
+    if norm_method == 'mean' or norm_method is None:
+        norm = flux.mean(axis=-1)
+    elif norm_method == 'max':
+        norm = flux.max(axis=-1)
+
+    return norm

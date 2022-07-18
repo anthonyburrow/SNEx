@@ -127,13 +127,13 @@ def _choose_spectrum(data_set, sn, predict_time, wave_mask):
             continue
 
         # (This should move to the Spextractor interpolation process, pre-save)
-        max_flux = flux[:, 0].max()
-        flux[:, 0] /= max_flux
-        flux[:, 1] /= max_flux**2
+        # max_flux = flux[:, 0].max()
+        # flux[:, 0] /= max_flux
+        # flux[:, 1] /= max_flux**2
 
-        # mean_flux = flux[:, 0].mean()
-        # flux[:, 0] /= mean_flux
-        # flux[:, 1] /= mean_flux**2
+        mean_flux = flux[:, 0].mean()
+        flux[:, 0] /= mean_flux
+        flux[:, 1] /= mean_flux**2
 
         spectra.append(flux)
         spec_times.append(spec_time)
@@ -260,7 +260,7 @@ def gen_model(time, *args, **kwargs):
 
     # Create model and calculate eigenvectors
     model = PCAModel(wave, training_flux, training_flux_var,
-                     n_components=n_components)
+                     n_components=n_components, *args, **kwargs)
     model.calc_eig()
 
     return model

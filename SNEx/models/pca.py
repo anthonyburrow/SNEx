@@ -6,6 +6,7 @@ from .extrapolationmodel import ExtrapolationModel
 from ..util.pcamodel_gen import gen_model
 from ..util.pcaplot import plot_info
 from ..util.feature_ranges import feature_ranges
+from ..util.misc import get_normalization
 
 
 _model_dir = f'{dirname(__file__)}/PCA_models'
@@ -33,7 +34,7 @@ class PCA(ExtrapolationModel):
                 self.n_components = n_components
         else:
             self.n_components = total_components
-        
+
         self._save_info(plot=plot_pca)
 
     def fit(self, calc_var=True, *args, **kwargs):
@@ -43,6 +44,13 @@ class PCA(ExtrapolationModel):
 
         spex = Spextractor(self.data, auto_prune=False, verbose=False)
         interp_flux, interp_var = spex.predict(self._model.wave[fit_mask])
+
+        # Normalize interpolation the same way
+        norm = get_normalization(interp_flux, *args, **kwargs)
+        interp_flux /= norm
+        interp_var /= norm**2
+
+        # Scale (subtract mean) from interpolation
         interp_flux, interp_var = self._model.scale(interp_flux, interp_var,
                                                     fit_mask)
 
@@ -69,8 +77,8 @@ class PCA(ExtrapolationModel):
         y_pred, y_var_pred = \
             self._model.descale(self.function(self._params), self._variance)
 
-        y_pred *= self._max_flux
-        y_err = self._max_flux * np.sqrt(y_var_pred)
+        y_pred *= self._norm
+        y_err = self._norm * np.sqrt(y_var_pred)
 
         return y_pred, y_err, self._model.wave
 
@@ -96,7 +104,7 @@ class PCA(ExtrapolationModel):
             mask += sub_mask
 
         self.data = self.data[mask]
-        self._max_flux = self.data[:, 1].max()
+        self._norm = get_normalization(self.data[:, 1], *args, **kwargs)
 
     def _fit_function(self, flux, eigenvectors):
         return eigenvectors @ flux.T
@@ -114,7 +122,7 @@ class PCA(ExtrapolationModel):
         eigenvalues = self._fit_function(eigenvectors, samples)
         predictions = self.function(eigenvalues)
 
-        return predictions.var(axis=1)        
+        return predictions.var(axis=1)
 
     def _save_info(self, plot):
         fn = './eigenvectors.dat'

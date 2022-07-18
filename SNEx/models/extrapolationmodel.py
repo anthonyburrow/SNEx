@@ -1,5 +1,6 @@
 from ..util.fitting import *
 from ..util.misc import prune_data
+from ..util.misc import get_normalization
 
 
 class ExtrapolationModel:
@@ -8,14 +9,14 @@ class ExtrapolationModel:
         self.data = data.copy()
         self.data = prune_data(self.data, fit_range)
 
-        self._max_flux = self.data[:, 1].max()
+        self._norm = get_normalization(self.data[:, 1], *args, **kwargs)
 
         self._params = None
 
     def fit(self, fit_method=None, *args, **kwargs):
-        y_obs = self.data[:, 1] / self._max_flux
+        y_obs = self.data[:, 1] / self._norm
         try:
-            y_err_obs = self.data[:, 2] / self._max_flux
+            y_err_obs = self.data[:, 2] / self._norm
         except IndexError:
             y_err_obs = None
 
@@ -31,7 +32,7 @@ class ExtrapolationModel:
         return params
 
     def predict(self, x_pred, *args, **kwargs):
-        return self._max_flux * self.function(x_pred, *self._params)
+        return self._norm * self.function(x_pred, *self._params)
 
     def function(self):
         pass

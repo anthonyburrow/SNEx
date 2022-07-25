@@ -179,7 +179,7 @@ fig.set_size_inches(7.5, 4.8)
 
 cbar = fig.colorbar(scatter, ax=ax)
 cbar.ax.tick_params(labelsize=8.)
-cbar.set_label(label=r'$\mathrm{s_{BV}}$', size=14.)
+cbar.set_label(label='days past max light', size=14.)
 
 plt.tight_layout()
 pos0 = cbar.ax.get_position()

@@ -54,17 +54,35 @@ def plot_training(wave, training_flux, training_flux_var):
     setup_clean_dir(plot_dir)
 
     fig, ax = plt.subplots()
+    fig_compiled, ax_compiled = plt.subplots()
+
+    ax.set_xlabel('Rest wavelength [A]')
+    ax.set_ylabel('Normalized flux')
+    ax.set_yscale('log')
+
+    ax_compiled.set_xlabel('Rest wavelength [A]')
+    ax_compiled.set_ylabel('Log Normalized flux')
+    ax_compiled.set_yscale('log')
 
     for i in range(len(training_flux)):
         flux = training_flux[i]
         flux_err = np.sqrt(training_flux_var[i])
 
+        # Individual plots
         ax.plot(wave, flux, 'k-', zorder=2)
         ax.fill_between(wave, flux - flux_err, flux + flux_err, color='grey',
                         zorder=1)
 
         fn = f'{plot_dir}/training_{i}.png'
-        fig.savefig(fn)
+        fig.savefig(fn, dpi=200)
         ax.clear()
+
+        # Compiled plot
+        ax_compiled.plot(wave, flux, 'k-', zorder=2, alpha=0.4)
+        ax_compiled.fill_between(wave, flux - flux_err, flux + flux_err,
+                                 color='grey', zorder=1, alpha=0.5)
+
+    fn = f'{plot_dir}/training_compiled.png'
+    fig_compiled.savefig(fn, dpi=200)
 
     plt.close('all')

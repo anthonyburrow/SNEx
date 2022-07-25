@@ -16,11 +16,6 @@ class PCAModel:
         self.n_components = n_components
         self.n_points = len(wave)
 
-        # Preprocess training data
-        # norm = get_normalization(self.flux_train, *args, **kwargs)
-        # self.flux_train = (self.flux_train.T / norm).T
-        # self.flux_var_train = (self.flux_var_train.T / norm**2).T
-
         self.mean = self.flux_train.mean(axis=0)
         self.flux_train, self.flux_var_train = self.scale(self.flux_train,
                                                           self.flux_var_train)

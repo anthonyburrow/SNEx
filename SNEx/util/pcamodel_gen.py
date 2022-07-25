@@ -5,7 +5,7 @@ import os
 from .pcamodel import PCAModel
 from .pcaplot import plot_training
 from .feature_ranges import feature_ranges
-from .misc import between_mask
+from .misc import between_mask, get_normalization
 
 # import matplotlib.pyplot as plt
 
@@ -95,6 +95,20 @@ def _get_wave_mask(regime=None, predict_range=None, predict_features=None,
     return csp_mask, nir_mask
 
 
+def _get_fit_mask(wave, fit_features=None, fit_range=None, *args, **kwargs):
+    fit_mask = np.full(len(wave), False)
+
+    if fit_features is not None and fit_features:
+        for feature in fit_features:
+            wave_range = feature_ranges[feature]
+            fit_mask += between_mask(wave, wave_range)
+
+    if fit_range is not None:
+        fit_mask += between_mask(wave, fit_range)
+
+    return fit_mask
+
+
 def _choose_spectrum(data_set, sn, predict_time, wave_mask):
     if data_set == 'csp':
         cutoff_mask = csp_cutoff_mask
@@ -125,15 +139,6 @@ def _choose_spectrum(data_set, sn, predict_time, wave_mask):
         # Don't use spectrum if ANY of the wave points are missing
         if np.isnan(flux[:, 0]).any():
             continue
-
-        # (This should move to the Spextractor interpolation process, pre-save)
-        # max_flux = flux[:, 0].max()
-        # flux[:, 0] /= max_flux
-        # flux[:, 1] /= max_flux**2
-
-        mean_flux = flux[:, 0].mean()
-        flux[:, 0] /= mean_flux
-        flux[:, 1] /= mean_flux**2
 
         spectra.append(flux)
         spec_times.append(spec_time)
@@ -252,9 +257,15 @@ def gen_model(time, *args, **kwargs):
     csp_wave_mask, nir_wave_mask = _get_wave_mask(*args, **kwargs)
     wave = np.concatenate((csp_total_wave[csp_wave_mask],
                            nir_total_wave[nir_wave_mask]))
+    fit_mask = _get_fit_mask(wave, *args, **kwargs)
 
     training_flux, training_flux_var = _get_spectra(time, csp_wave_mask,
                                                     nir_wave_mask)
+
+    # Normalize training data
+    norm = get_normalization(training_flux[:, fit_mask], *args, **kwargs)
+    training_flux = (training_flux.T / norm).T
+    training_flux_var = (training_flux_var.T / norm**2).T
 
     plot_training(wave, training_flux, training_flux_var)
 

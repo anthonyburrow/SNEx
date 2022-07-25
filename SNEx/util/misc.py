@@ -51,6 +51,8 @@ def setup_clean_dir(directory):
 def get_normalization(flux, norm_method=None, *args, **kwargs):
     if norm_method == 'mean' or norm_method is None:
         norm = flux.mean(axis=-1)
+    if norm_method == 'median':
+        norm = np.median(flux, axis=-1)
     elif norm_method == 'max':
         norm = flux.max(axis=-1)
 

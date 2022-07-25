@@ -3,12 +3,9 @@ from matplotlib.ticker import MultipleLocator
 
 from SNEx import SNEx
 from SNEx.util.feature_ranges import feature_ranges
-# from spextractor import Spextractor
 
 
-_data_dir = '../ex_data'
-
-fn = f'{_data_dir}/ptf11kly_20110910_MJD55814.43.dat'
+fn = f'./ptf11kly_20110910_MJD55814.43.dat'
 
 read_params = {
     'z': 0.001208,
@@ -33,14 +30,6 @@ params = {
     'norm_method': 'mean'
 }
 y_pca, y_err_pca, x_pca = model.predict(**params)
-
-# Interpolation
-# read_params['wave_range'] = (5500., 12000.)
-# spex = Spextractor(fn, **read_params)
-
-# y_interp, y_var_interp = spex.predict(x_pca)
-# y_interp *= spex.fmax_out
-# y_var_interp *= spex.fmax_out**2
 
 # Plot
 fig, ax = plt.subplots()
@@ -116,40 +105,5 @@ ax.axvspan(1.7421, 1.9322, alpha=0.8, color='grey', zorder=3)
 line = ax.plot([0.], [0.], 'r-', label='PCA reconstruction')
 ax.legend()
 
-plt.tight_layout()
-fn = './example.pdf'
-fig.savefig(fn)
-fn = './example.png'
+fn = './11fe_single.png'
 fig.savefig(fn, dpi=200)
-
-
-# Plot
-fig, ax = plt.subplots()
-
-ax.set_xlim(0.3500, 0.9000)
-ax.set_ylim(1.e-14, 1.3e-12)
-
-ax.plot(model.data[:, 0], model.data[:, 1], 'k-', label='data', zorder=6)
-ax.fill_between(model.data[:, 0], model.data[:, 1] - model.data[:, 2],
-                model.data[:, 1] + model.data[:, 2], color='#595959',
-                zorder=4)
-
-ax.axvline(params['fit_range'][0], color='r', ls='--', lw=1.2, zorder=10)
-ax.axvline(params['fit_range'][1], color='r', ls='--', lw=1.2, zorder=10)
-
-ax.xaxis.set_minor_locator(MultipleLocator(0.0250))
-
-ax.set_yscale('log')
-ax.xaxis.grid(which='both', zorder=0)
-
-ax.set_xlabel('Rest wavelength [$\mu m$]')
-ax.set_ylabel('Flux')
-
-plt.tight_layout()
-fn = './example_no_pred.png'
-fig.savefig(fn, dpi=200)
-
-
-# Testing
-# chisq = ((y_interp - y_pca)**2 / y_err_pca**2).sum() / (len(x_pca) - 1)
-# print(chisq)

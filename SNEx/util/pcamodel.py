@@ -2,8 +2,6 @@ import numpy as np
 from sklearn.decomposition import PCA
 import empca
 
-from .misc import get_normalization
-
 
 class PCAModel:
 
@@ -19,8 +17,6 @@ class PCAModel:
         self.mean = self.flux_train.mean(axis=0)
         self.flux_train, self.flux_var_train = self.scale(self.flux_train,
                                                           self.flux_var_train)
-
-        np.savetxt('mean.dat', self.mean)
 
         self.eigenvalues = None
         self.eigenvectors = None

@@ -32,11 +32,13 @@ test_ind = [probs[:, i].argmax() for i in range(4)]
 test_data = data[test_ind]
 test_pc = test_data[:, 13:]
 
-fn = './eigenvectors.dat'
+info_dir = './pca_info'
+fn = f'{info_dir}/eigenvectors.dat'
 eigenvectors = np.loadtxt(fn)
-fn = './wavelengths.dat'
+fn = f'{info_dir}/wavelengths.dat'
 wavelengths = np.loadtxt(fn)
-mean_spec = np.loadtxt('mean.dat')
+fn = f'{info_dir}/mean.dat'
+mean_spec = np.loadtxt(fn)
 
 color_map = {
     # cn, ss, bl, cl

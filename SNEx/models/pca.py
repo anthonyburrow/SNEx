@@ -6,7 +6,7 @@ from .extrapolationmodel import ExtrapolationModel
 from ..util.pcamodel_gen import gen_model
 from ..util.pcaplot import plot_info
 from ..util.feature_ranges import feature_ranges
-from ..util.misc import get_normalization
+from ..util.misc import get_normalization, setup_clean_dir
 
 
 _model_dir = f'{dirname(__file__)}/PCA_models'
@@ -125,10 +125,15 @@ class PCA(ExtrapolationModel):
         return predictions.var(axis=1)
 
     def _save_info(self, plot):
-        fn = './eigenvectors.dat'
+        info_dir = './pca_info'
+        setup_clean_dir(info_dir)
+
+        fn = f'{info_dir}/eigenvectors.dat'
         np.savetxt(fn, self._model.eigenvectors[:self.n_components])
-        fn = './wavelengths.dat'
+        fn = f'{info_dir}/wavelengths.dat'
         np.savetxt(fn, self._model.wave)
+        fn = f'{info_dir}/mean.dat'
+        np.savetxt(fn, self._model.mean)
 
         if plot:
             plot_info(self._model)

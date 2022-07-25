@@ -26,9 +26,11 @@ def plot_eigenvectors(pcamodel):
     ax.legend()
 
     plt.tight_layout()
-    fn = './eigenvectors.pdf'
+
+    plot_dir = './pca_info'
+    fn = f'{plot_dir}/eigenvectors.pdf'
     fig.savefig(fn)
-    fn = './eigenvectors.png'
+    fn = f'{plot_dir}/eigenvectors.png'
     fig.savefig(fn, dpi=200)
 
 
@@ -45,8 +47,12 @@ def plot_explained_var(pcamodel):
     ax.set_ylabel('fractional explained variance')
 
     plt.tight_layout()
-    fn = './explained_variance.pdf'
+
+    plot_dir = './pca_info'
+    fn = f'{plot_dir}/explained_variance.pdf'
     fig.savefig(fn)
+    fn = f'{plot_dir}/explained_variance.png'
+    fig.savefig(fn, dpi=200)
 
 
 def plot_training(wave, training_flux, training_flux_var):

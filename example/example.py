@@ -3,7 +3,7 @@ from matplotlib.ticker import MultipleLocator
 
 from SNEx import SNEx
 from SNEx.util.feature_ranges import feature_ranges
-from spextractor import Spextractor
+# from spextractor import Spextractor
 
 
 _data_dir = '../ex_data'

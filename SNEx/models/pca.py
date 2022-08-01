@@ -134,6 +134,10 @@ class PCA(ExtrapolationModel):
         np.savetxt(fn, self._model.wave)
         fn = f'{info_dir}/mean.dat'
         np.savetxt(fn, self._model.mean)
+        fn = f'{info_dir}/flux_train.dat'
+        np.savetxt(fn, self._model.flux_train)
+        fn = f'{info_dir}/flux_var_train.dat'
+        np.savetxt(fn, self._model.flux_var_train)
 
         if plot:
             plot_info(self._model)

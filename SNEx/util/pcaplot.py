@@ -23,6 +23,8 @@ def plot_eigenvectors(pcamodel):
     ax.set_xlabel('Rest wavelength (A)')
     ax.set_ylabel(r'$F - F_\mu$')
 
+    ax.axhline(0., color='k', ls='--', zorder=-4)
+
     ax.legend()
 
     plt.tight_layout()
@@ -62,13 +64,10 @@ def plot_training(wave, training_flux, training_flux_var):
     fig, ax = plt.subplots()
     fig_compiled, ax_compiled = plt.subplots()
 
-    ax.set_xlabel('Rest wavelength [A]')
-    ax.set_ylabel('Normalized flux')
-    ax.set_yscale('log')
-
     ax_compiled.set_xlabel('Rest wavelength [A]')
-    ax_compiled.set_ylabel('Log Normalized flux')
+    ax_compiled.set_ylabel('Normalized flux')
     ax_compiled.set_yscale('log')
+    ax_compiled.set_ylim(3e-6, 6)
 
     for i in range(len(training_flux)):
         flux = training_flux[i]
@@ -78,6 +77,12 @@ def plot_training(wave, training_flux, training_flux_var):
         ax.plot(wave, flux, 'k-', zorder=2)
         ax.fill_between(wave, flux - flux_err, flux + flux_err, color='grey',
                         zorder=1)
+
+        ax.set_xlabel('Rest wavelength [A]')
+        ax.set_ylabel('Normalized flux')
+        ax.set_yscale('log')
+        ax.set_ylim(1e-2, 6.)
+        ax.set_xlim(5000., 10000.)
 
         fn = f'{plot_dir}/training_{i}.png'
         fig.savefig(fn, dpi=200)

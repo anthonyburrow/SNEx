@@ -68,6 +68,21 @@ class PCAModel:
 
         # Predict everywhere, then see how this varies from training data
         y_pred = (self.eigenvectors[:n_components].T @ fit_eigenvalues).T
-        model_var = (self.flux_train - y_pred).var(axis=0)
+        residual = self.flux_train - y_pred
+        model_var = residual.var(axis=0)
+
+        import matplotlib.pyplot as plt
+        fig, ax = plt.subplots()
+        for i in range(len(self.flux_train)):
+            ax.plot(self.wave, self.flux_train[i] + self.mean, color='k')
+            ax.plot(self.wave, y_pred[i] + self.mean, color='r')
+
+            ax.axvline(8400., color='k', ls='--')
+
+            ax.set_yscale('log')
+
+            fn = f'test_{i}.png'
+            fig.savefig(fn, dpi=200)
+            ax.clear()
 
         return model_var

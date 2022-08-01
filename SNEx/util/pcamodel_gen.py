@@ -36,7 +36,7 @@ nir_total_wave_range = (7500., 24000.)
 nir_total_n_points = 1500
 
 # Account for overlap, setup complete wavelength array
-csp_nir_cutoff = 8200.
+csp_nir_cutoff = 8400.
 
 csp_total_wave = np.linspace(*csp_total_wave_range, csp_total_n_points)
 nir_total_wave = np.linspace(*nir_total_wave_range, nir_total_n_points)
@@ -131,6 +131,8 @@ def _choose_spectrum(data_set, sn, predict_time, wave_mask):
         spec_time = float(spec_file[len(sn_dir) + 1 + 6:-4])
         if abs(spec_time - predict_time) > _calc_time_window(predict_time):
             continue
+        # if -5. < spec_time - predict_time < 10.:
+        #     continue
 
         flux = np.loadtxt(spec_file)
         flux = flux[cutoff_mask]
@@ -195,6 +197,7 @@ def _get_spectra(predict_time, csp_wave_mask, nir_wave_mask):
     is_csp = np.any(csp_wave_mask)
     is_nir = np.any(nir_wave_mask)
 
+    count = 0
     for sn in os.listdir(csp_dir):
         if not is_csp:
             continue
@@ -227,14 +230,17 @@ def _get_spectra(predict_time, csp_wave_mask, nir_wave_mask):
         flux = np.concatenate((csp_flux, nir_flux))
         flux_var = np.concatenate((csp_flux_var, nir_flux_var))
 
+        print(f'{count} : {sn} : csp {csp_time} : nir {nir_time}')
         training_flux.append(flux)
         training_flux_var.append(flux_var)
+
+        count += 1
 
     for sn in os.listdir(nir_dir):
         if is_csp:
             continue
 
-        nir_spectrum = _choose_spectrum('nir', sn, predict_time, nir_wave_mask)
+        nir_spectrum, nir_time = _choose_spectrum('nir', sn, predict_time, nir_wave_mask)
         if nir_spectrum is None:
             continue
         nir_flux = nir_spectrum[:, 0]

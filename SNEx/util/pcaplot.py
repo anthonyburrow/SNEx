@@ -57,7 +57,7 @@ def plot_explained_var(pcamodel):
     fig.savefig(fn, dpi=200)
 
 
-def plot_training(wave, training_flux, training_flux_var):
+def plot_training(wave, training_flux, training_flux_var, training_times):
     plot_dir = './training_spec'
     setup_clean_dir(plot_dir)
 
@@ -67,7 +67,23 @@ def plot_training(wave, training_flux, training_flux_var):
     ax_compiled.set_xlabel('Rest wavelength [A]')
     ax_compiled.set_ylabel('Normalized flux')
     ax_compiled.set_yscale('log')
-    ax_compiled.set_ylim(3e-6, 6)
+    ax_compiled.set_ylim(3e-2, 6.)
+    ax_compiled.set_xlim(5500., 11000.)
+
+    ax_compiled.axvline(8400., color='k', ls='--', zorder=-4)
+
+    which_time = 0
+    times = training_times[:, which_time]
+    times = np.abs(training_times[:, 0] - training_times[:, 1])
+    min_time = times.min()
+    max_time = times.max()
+    times_norm = (times - min_time) / (max_time - min_time)
+    colors = plt.cm.Spectral(times_norm)
+    sm = plt.cm.ScalarMappable(cmap='Spectral',
+                               norm=plt.Normalize(vmin=min_time, vmax=max_time))
+    cbar = fig_compiled.colorbar(sm)
+    cbar.set_label(label=r'time past $B_{max}$', size=14.)
+    # cbar.set_label(label=r'$|t_{CSP} - t_{FIRE}|$', size=14.)
 
     for i in range(len(training_flux)):
         flux = training_flux[i]
@@ -81,18 +97,20 @@ def plot_training(wave, training_flux, training_flux_var):
         ax.set_xlabel('Rest wavelength [A]')
         ax.set_ylabel('Normalized flux')
         ax.set_yscale('log')
-        ax.set_ylim(1e-2, 6.)
-        ax.set_xlim(5000., 10000.)
+        ax.set_ylim(3e-2, 6.)
+        ax.set_xlim(5500., 11000.)
 
         fn = f'{plot_dir}/training_{i}.png'
         fig.savefig(fn, dpi=200)
         ax.clear()
 
         # Compiled plot
-        ax_compiled.plot(wave, flux, 'k-', zorder=2, alpha=0.4)
-        ax_compiled.fill_between(wave, flux - flux_err, flux + flux_err,
-                                 color='grey', zorder=1, alpha=0.5)
+        ax_compiled.plot(wave, flux, '-', c=colors[i], lw=1., zorder=2,
+                         alpha=0.8,)
+        # ax_compiled.fill_between(wave, flux - flux_err, flux + flux_err,
+        #                          color='grey', zorder=1, alpha=0.5)
 
+    plt.tight_layout()
     fn = f'{plot_dir}/training_compiled.png'
     fig_compiled.savefig(fn, dpi=200)
 

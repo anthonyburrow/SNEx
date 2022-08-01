@@ -164,7 +164,8 @@ def _scale_nir(csp_flux, csp_wave_mask, nir_flux, nir_wave_mask):
     can_direct_scale = csp_wave_mask[-1] and nir_wave_mask[0]
 
     if can_direct_scale:
-        return csp_flux[-1] / nir_flux[0]
+        # return csp_flux[-1] / nir_flux[0]
+        return csp_flux[-2:].mean() / nir_flux[:2].mean()
 
     # Scale using a Planck function
     from ..SNEx import SNEx
@@ -190,6 +191,7 @@ def _scale_nir(csp_flux, csp_wave_mask, nir_flux, nir_wave_mask):
 def _get_spectra(predict_time, csp_wave_mask, nir_wave_mask):
     training_flux = []
     training_flux_var = []
+    training_times = []
 
     csp_dir = f'{_spex_interp_dir}/csp'
     nir_dir = f'{_spex_interp_dir}/nir'
@@ -211,6 +213,7 @@ def _get_spectra(predict_time, csp_wave_mask, nir_wave_mask):
         if not is_nir:
             training_flux.append(csp_flux)
             training_flux_var.append(csp_flux_var)
+            training_times.append((csp_time, np.nan))
             continue
 
         nir_spectrum, nir_time = _choose_spectrum('nir', sn, predict_time, nir_wave_mask)
@@ -233,6 +236,7 @@ def _get_spectra(predict_time, csp_wave_mask, nir_wave_mask):
         print(f'{count} : {sn} : csp {csp_time} : nir {nir_time}')
         training_flux.append(flux)
         training_flux_var.append(flux_var)
+        training_times.append((csp_time, nir_time))
 
         count += 1
 
@@ -248,6 +252,7 @@ def _get_spectra(predict_time, csp_wave_mask, nir_wave_mask):
 
         training_flux.append(nir_flux)
         training_flux_var.append(nir_flux_var)
+        training_times.append((np.nan, nir_time))
 
     msg = (
         f'Total sample size within {_calc_time_window(predict_time)} days: '
@@ -255,7 +260,7 @@ def _get_spectra(predict_time, csp_wave_mask, nir_wave_mask):
     )
     print(msg)
 
-    return np.array(training_flux), np.array(training_flux_var)
+    return np.array(training_flux), np.array(training_flux_var), np.array(training_times)
 
 
 def gen_model(time, *args, **kwargs):
@@ -265,15 +270,15 @@ def gen_model(time, *args, **kwargs):
                            nir_total_wave[nir_wave_mask]))
     fit_mask = _get_fit_mask(wave, *args, **kwargs)
 
-    training_flux, training_flux_var = _get_spectra(time, csp_wave_mask,
-                                                    nir_wave_mask)
+    training_flux, training_flux_var, training_times = \
+        _get_spectra(time, csp_wave_mask, nir_wave_mask)
 
     # Normalize training data
     norm = get_normalization(training_flux[:, fit_mask], *args, **kwargs)
     training_flux = (training_flux.T / norm).T
     training_flux_var = (training_flux_var.T / norm**2).T
 
-    plot_training(wave, training_flux, training_flux_var)
+    plot_training(wave, training_flux, training_flux_var, training_times)
 
     # Create model and calculate eigenvectors
     model = PCAModel(wave, training_flux, training_flux_var,

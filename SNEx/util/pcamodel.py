@@ -1,6 +1,11 @@
 import numpy as np
-from sklearn.decomposition import PCA
 import empca
+
+from .misc import between_mask
+
+
+_telluric_regions = ((12963., 14419.), (17421., 19322.))
+_empca_weight_method = 'normalized_variance'
 
 
 class PCAModel:
@@ -42,22 +47,18 @@ class PCAModel:
         weighted = not np.all(self.flux_var_train == 0.) or \
             self.flux_var_train is None
 
-        weighted = False
-        if weighted:
-            print('Uncertainty detected; generating EMPCA model')
-            weights = 1. / self.flux_var_train
-            pca = empca.empca(self.flux_train, weights=weights, niter=25,
-                              nvec=self.n_components, silent=True)
-            self.eigenvalues = pca.coeff
-            self.eigenvectors = pca.eigvec
-            self.explained_var = [pca.R2vec(i) for i in range(self.n_components)]
-            self.explained_var = np.array(self.explained_var)
-        else:
-            print('No uncertainty detected; generating PCA model')
-            pca = PCA(n_components=self.n_components)
-            self.eigenvalues = pca.fit_transform(self.flux_train)
-            self.eigenvectors = pca.components_
-            self.explained_var = pca.explained_variance_ratio_
+        weight_method = _empca_weight_method
+        if not weighted:
+            weight_method = 'uniform'
+            print('No uncertainty detected; using equal PCA weights.')
+
+        weights = self._calc_empca_weights(weight_method=weight_method)
+        pca = empca.empca(self.flux_train, weights=weights, niter=25,
+                          nvec=self.n_components, silent=True)
+        self.eigenvalues = pca.coeff
+        self.eigenvectors = pca.eigvec
+        self.explained_var = [pca.R2vec(i) for i in range(self.n_components)]
+        self.explained_var = np.array(self.explained_var)
 
     def calc_var(self, fit_mask, n_components):
         # Get eigenvalues inside fitting region
@@ -86,3 +87,23 @@ class PCAModel:
             ax.clear()
 
         return model_var
+
+    def _calc_empca_weights(self, weight_method=None):
+        if weight_method is None or weight_method == 'uniform':
+            return np.ones(self.flux_var_train.shape)
+        elif weight_method == 'telluric':
+            weights = np.ones(self.flux_var_train.shape)
+            for wave_range in _telluric_regions:
+                mask = between_mask(self.wave, wave_range)
+                min_var = self.flux_var_train[:, mask].min(axis=0)
+                max_var = self.flux_var_train[:, mask].max(axis=0)
+                norm_var = (self.flux_var_train[:, mask] - min_var) / (max_var - min_var)
+                weights[:, mask] = 1. - norm_var
+            return weights
+        elif weight_method == 'inverse_variance':
+            return 1. / self.flux_var_train
+        elif weight_method == 'normalized_variance':
+            min_var = self.flux_var_train.min(axis=0)
+            max_var = self.flux_var_train.max(axis=0)
+            norm_var = (self.flux_var_train - min_var) / (max_var - min_var)
+            return 1. - norm_var

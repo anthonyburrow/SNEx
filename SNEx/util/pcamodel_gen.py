@@ -129,10 +129,10 @@ def _choose_spectrum(data_set, sn, predict_time, wave_mask):
     spec_times = []
     for spec_file in spec_files:
         spec_time = float(spec_file[len(sn_dir) + 1 + 6:-4])
-        if abs(spec_time - predict_time) > _calc_time_window(predict_time):
-            continue
-        # if -5. < spec_time - predict_time < 10.:
+        # if abs(spec_time - predict_time) > _calc_time_window(predict_time):
         #     continue
+        if not -5. < spec_time - predict_time < 10.:
+            continue
 
         flux = np.loadtxt(spec_file)
         flux = flux[cutoff_mask]

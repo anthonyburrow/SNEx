@@ -1,12 +1,11 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-from .misc import setup_clean_dir
-
 
 def plot_info(pcamodel):
     plot_eigenvectors(pcamodel)
     plot_explained_var(pcamodel)
+    plot_training(pcamodel)
     plt.close('all')
 
 
@@ -57,9 +56,13 @@ def plot_explained_var(pcamodel):
     fig.savefig(fn, dpi=200)
 
 
-def plot_training(wave, training_flux, training_flux_var, training_times):
+def plot_training(pcamodel):
     plot_dir = './training_spec'
-    setup_clean_dir(plot_dir)
+
+    wave = pcamodel.wave
+    training_flux = pcamodel.training_flux
+    training_flux_var = pcamodel.flux_var_train
+    training_times = pcamodel.training_times
 
     fig, ax = plt.subplots()
     fig_compiled, ax_compiled = plt.subplots()

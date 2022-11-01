@@ -3,9 +3,8 @@ from pathlib import Path
 import os
 
 from .pcamodel import PCAModel
-from .pcaplot import plot_training
-from .feature_ranges import feature_ranges
-from .misc import between_mask, get_normalization
+from ..util.feature_ranges import feature_ranges
+from ..util.misc import between_mask, get_normalization
 
 # import matplotlib.pyplot as plt
 
@@ -233,7 +232,7 @@ def _get_spectra(predict_time, csp_wave_mask, nir_wave_mask):
         flux = np.concatenate((csp_flux, nir_flux))
         flux_var = np.concatenate((csp_flux_var, nir_flux_var))
 
-        print(f'{count} : {sn} : csp {csp_time} : nir {nir_time}')
+        # print(f'{count} : {sn} : csp {csp_time} : nir {nir_time}')
         training_flux.append(flux)
         training_flux_var.append(flux_var)
         training_times.append((csp_time, nir_time))
@@ -255,8 +254,8 @@ def _get_spectra(predict_time, csp_wave_mask, nir_wave_mask):
         training_times.append((np.nan, nir_time))
 
     msg = (
-        f'Total sample size within {_calc_time_window(predict_time)} days: '
-        f'{len(training_flux)}\n'
+        f'Total sample size within {_calc_time_window(predict_time):.3f} days:'
+        f'{len(training_flux)}'
     )
     print(msg)
 
@@ -278,11 +277,10 @@ def gen_model(time, *args, **kwargs):
     training_flux = (training_flux.T / norm).T
     training_flux_var = (training_flux_var.T / norm**2).T
 
-    plot_training(wave, training_flux, training_flux_var, training_times)
-
     # Create model and calculate eigenvectors
     model = PCAModel(wave, training_flux, training_flux_var,
-                     n_components=n_components, *args, **kwargs)
+                     n_components=n_components, training_times=training_times,
+                     *args, **kwargs)
     model.calc_eig()
 
     return model

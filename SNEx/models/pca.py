@@ -3,8 +3,8 @@ from spextractor import Spextractor
 from os.path import dirname
 
 from .extrapolationmodel import ExtrapolationModel
-from ..util.pcamodel_gen import gen_model
-from ..util.pcaplot import plot_info
+from ..empca.pcamodel_gen import gen_model
+from ..empca.pcaplot import plot_info
 from ..util.feature_ranges import feature_ranges
 from ..util.misc import get_normalization, setup_clean_dir
 
@@ -83,7 +83,7 @@ class PCA(ExtrapolationModel):
         return y_pred, y_err, self._model.wave
 
     def function(self, eigenvalues):
-        y_pred = self._model.eigenvectors[:self.n_components].T @ eigenvalues.T
+        y_pred = (eigenvalues @ self._model.eigenvectors[:self.n_components]).T
         return y_pred
 
     def __str__(self):
@@ -109,7 +109,7 @@ class PCA(ExtrapolationModel):
     def _fit_function(self, flux, eigenvectors):
         return eigenvectors @ flux.T
 
-    def _calc_variance(self, flux, var, eigenvectors, var_iter=1000,
+    def _calc_variance(self, flux, var, eigenvectors, var_iter=500,
                        *args, **kwargs):
         msg = f'Iterating over {var_iter} PCA fits to estimate uncertainty...'
         print(msg)
@@ -140,4 +140,6 @@ class PCA(ExtrapolationModel):
         np.savetxt(fn, self._model.flux_var_train)
 
         if plot:
+            plot_dir = './training_spec'
+            setup_clean_dir(plot_dir)
             plot_info(self._model)

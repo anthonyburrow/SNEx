@@ -1,7 +1,7 @@
 import numpy as np
-import empca
 
-from .misc import between_mask
+from .empca import empca
+from ..util.misc import between_mask
 
 
 _telluric_regions = ((12963., 14419.), (17421., 19322.))
@@ -11,10 +11,11 @@ _empca_weight_method = 'normalized_variance'
 class PCAModel:
 
     def __init__(self, wave, flux_train, flux_var_train=None,
-                 n_components=None, *args, **kwargs):
+                 n_components=None, training_times=None, *args, **kwargs):
         self.wave = wave
         self.flux_train = flux_train
         self.flux_var_train = flux_var_train
+        self.training_times = training_times
 
         self.n_components = n_components
         self.n_points = len(wave)
@@ -53,8 +54,8 @@ class PCAModel:
             print('No uncertainty detected; using equal PCA weights.')
 
         weights = self._calc_empca_weights(weight_method=weight_method)
-        pca = empca.empca(self.flux_train, weights=weights, niter=25,
-                          nvec=self.n_components, silent=True)
+        pca = empca(self.flux_train, weights=weights, niter=25,
+                    nvec=self.n_components, silent=True)
         self.eigenvalues = pca.coeff
         self.eigenvectors = pca.eigvec
         self.explained_var = [pca.R2vec(i) for i in range(self.n_components)]
@@ -72,19 +73,19 @@ class PCAModel:
         residual = self.flux_train - y_pred
         model_var = residual.var(axis=0)
 
-        import matplotlib.pyplot as plt
-        fig, ax = plt.subplots()
-        for i in range(len(self.flux_train)):
-            ax.plot(self.wave, self.flux_train[i] + self.mean, color='k')
-            ax.plot(self.wave, y_pred[i] + self.mean, color='r')
+        # import matplotlib.pyplot as plt
+        # fig, ax = plt.subplots()
+        # for i in range(len(self.flux_train)):
+        #     ax.plot(self.wave, self.flux_train[i] + self.mean, color='k')
+        #     ax.plot(self.wave, y_pred[i] + self.mean, color='r')
 
-            ax.axvline(8400., color='k', ls='--')
+        #     ax.axvline(8400., color='k', ls='--')
 
-            ax.set_yscale('log')
+        #     ax.set_yscale('log')
 
-            fn = f'test_{i}.png'
-            fig.savefig(fn, dpi=200)
-            ax.clear()
+        #     fn = f'test_{i}.png'
+        #     fig.savefig(fn, dpi=200)
+        #     ax.clear()
 
         return model_var
 

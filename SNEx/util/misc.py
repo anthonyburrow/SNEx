@@ -1,5 +1,8 @@
 import os
 import shutil
+from functools import wraps
+from time import time
+import numpy as np
 
 from ..util.constants import c
 
@@ -57,3 +60,14 @@ def get_normalization(flux, norm_method=None, *args, **kwargs):
         norm = flux.max(axis=-1)
 
     return norm
+
+
+def timing(f):
+    @wraps(f)
+    def wrap(*args, **kw):
+        ts = time()
+        result = f(*args, **kw)
+        te = time()
+        print(f'Function {f.__name__} took {te - ts:2.4f} seconds')
+        return result
+    return wrap

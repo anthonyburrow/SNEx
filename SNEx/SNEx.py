@@ -70,7 +70,7 @@ class SNEx:
         # TODO: Add extra attributes from specific model to SNEx model here
 
         model.fit(*args, **kwargs)
-        print(f'   {model}')
+        # print(f'   {model}')
         return model.predict(*args, **kwargs)
 
     def _get_NIR_model(self, data, extrap_method=None, *args, **kwargs):
@@ -82,7 +82,7 @@ class SNEx:
             print('Predicting with Wien model...')
             model = Wien(data, *args, **kwargs)
         elif extrap_method == 'planck':
-            print('Predicting with Planck model...')
+            # print('Predicting with Planck model...')
             model = Planck(data, *args, **kwargs)
         elif extrap_method == 'pca':
             print('Predicting with NIR PCA model...')

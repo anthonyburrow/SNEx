@@ -21,6 +21,7 @@ class PCAModel:
         self.n_points = len(wave)
 
         self.mean = self.flux_train.mean(axis=0)
+        self.std = self.flux_train.std(axis=0)
         self.flux_train, self.flux_var_train = self.scale(self.flux_train,
                                                           self.flux_var_train)
 
@@ -30,17 +31,25 @@ class PCAModel:
 
     def descale(self, flux, flux_var, mask=None):
         mean = self.mean if mask is None else self.mean[mask]
+        std = self.std if mask is None else self.std[mask]
 
-        new_flux = flux + mean
-        new_flux_var = flux_var
+        new_flux = (flux * std) + mean
+        new_flux_var = flux_var * std**2
+
+        # new_flux = flux + mean
+        # new_flux_var = flux_var
 
         return new_flux, new_flux_var
 
     def scale(self, flux, flux_var, mask=None):
         mean = self.mean if mask is None else self.mean[mask]
+        std = self.std if mask is None else self.std[mask]
 
-        new_flux = flux - mean
-        new_flux_var = flux_var
+        new_flux = (flux - mean) / std
+        new_flux_var = flux_var / std**2
+
+        # new_flux = flux - mean
+        # new_flux_var = flux_var
 
         return new_flux, new_flux_var
 

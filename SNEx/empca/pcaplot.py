@@ -20,7 +20,7 @@ def plot_eigenvectors(pcamodel):
         ax.plot(wave, eig[i], '-', label=f'PC{i + 1}', zorder=n_comp - i)
 
     ax.set_xlabel('Rest wavelength (A)')
-    ax.set_ylabel(r'$F - F_\mu$')
+    ax.set_ylabel(r'$(F - \mu_F) / \sigma_F$')
 
     ax.axhline(0., color='k', ls='--', zorder=-4)
 
@@ -60,7 +60,7 @@ def plot_training(pcamodel):
     plot_dir = './training_spec'
 
     wave = pcamodel.wave
-    training_flux = pcamodel.training_flux
+    training_flux = pcamodel.flux_train
     training_flux_var = pcamodel.flux_var_train
     training_times = pcamodel.training_times
 
@@ -70,7 +70,7 @@ def plot_training(pcamodel):
     ax_compiled.set_xlabel('Rest wavelength [A]')
     ax_compiled.set_ylabel('Normalized flux')
     ax_compiled.set_yscale('log')
-    ax_compiled.set_ylim(3e-2, 6.)
+    # ax_compiled.set_ylim(3e-2, 6.)
     ax_compiled.set_xlim(5500., 11000.)
 
     ax_compiled.axvline(8400., color='k', ls='--', zorder=-4)
@@ -100,7 +100,7 @@ def plot_training(pcamodel):
         ax.set_xlabel('Rest wavelength [A]')
         ax.set_ylabel('Normalized flux')
         ax.set_yscale('log')
-        ax.set_ylim(3e-2, 6.)
+        # ax.set_ylim(3e-2, 6.)
         ax.set_xlim(5500., 11000.)
 
         fn = f'{plot_dir}/training_{i}.png'

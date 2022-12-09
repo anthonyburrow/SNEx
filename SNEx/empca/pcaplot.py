@@ -64,6 +64,9 @@ def plot_training(pcamodel):
     training_flux_var = pcamodel.flux_var_train
     training_times = pcamodel.training_times
 
+    training_flux, training_flux_var = pcamodel.descale(training_flux,
+                                                        training_flux_var)
+
     fig, ax = plt.subplots()
     fig_compiled, ax_compiled = plt.subplots()
 

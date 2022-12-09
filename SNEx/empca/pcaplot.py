@@ -2,6 +2,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MultipleLocator
 
+from ..util.plot_setup import paper_plot
+paper_plot()
+
 
 def plot_info(pcamodel):
     plot_eigenvectors(pcamodel)
@@ -19,12 +22,15 @@ def plot_eigenvectors(pcamodel):
 
     n_comp = 3
     for i in range(n_comp):
-        ax.plot(wave, eig[i], '-', label=f'PC{i + 1}', zorder=n_comp - i)
+        ax.plot(wave * 1e-4, eig[i], '-', label=f'PC{i + 1}', zorder=n_comp - i)
 
-    ax.set_xlabel('Rest wavelength (A)')
+    ax.set_xlabel(r'Rest wavelength ($\mu m$)')
     ax.set_ylabel(r'$(F - \mu_F) / \sigma_F$')
 
     ax.axhline(0., color='k', ls='--', zorder=-4)
+
+    ax.xaxis.set_minor_locator(MultipleLocator(0.05))
+    ax.yaxis.set_minor_locator(MultipleLocator(0.005))
 
     ax.legend()
 
@@ -41,7 +47,7 @@ def plot_explained_var(pcamodel):
     fig, ax = plt.subplots()
 
     pc_ids = np.arange(1, pcamodel.n_components + 1)
-    ax.plot(pc_ids, pcamodel.explained_var, 'ko')
+    ax.plot(pc_ids, pcamodel.explained_var, 'ko', ms=6.)
 
     ax.set_yscale('log')
     ax.set_ylim(top=1.)
@@ -64,7 +70,7 @@ def plot_explained_var_cumsum(pcamodel):
     fig, ax = plt.subplots()
 
     pc_ids = np.arange(1, pcamodel.n_components + 1)
-    ax.plot(pc_ids, pcamodel.explained_var.cumsum(), 'ko')
+    ax.plot(pc_ids, pcamodel.explained_var.cumsum(), 'ko', ms=6.)
 
     ax.axhline(0.95, c='r', ls='--')
 

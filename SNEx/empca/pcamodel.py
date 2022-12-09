@@ -64,7 +64,7 @@ class PCAModel:
 
         weights = self._calc_empca_weights(weight_method=weight_method)
         pca = empca(self.flux_train, weights=weights, niter=25,
-                    nvec=self.n_components, silent=True)
+                    nvec=self.n_components, silent=True, seed=2)
         self.eigenvalues = pca.coeff
         self.eigenvectors = pca.eigvec
         self.explained_var = [pca.R2vec(i) for i in range(self.n_components)]

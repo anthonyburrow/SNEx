@@ -210,7 +210,7 @@ def empca(data, weights=None, niter=25, nvec=5, silent=False, *args, **kwargs):
 
     assert data.shape == weights.shape
 
-    model = Model(data, weights, nvec)
+    model = Model(data, weights, nvec, *args, **kwargs)
     model.solve_coeffs()
 
     if not silent:

@@ -1,10 +1,12 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.ticker import MultipleLocator
 
 
 def plot_info(pcamodel):
     plot_eigenvectors(pcamodel)
     plot_explained_var(pcamodel)
+    plot_explained_var_cumsum(pcamodel)
     plot_training(pcamodel)
     plt.close('all')
 
@@ -45,7 +47,9 @@ def plot_explained_var(pcamodel):
     ax.set_ylim(top=1.)
 
     ax.set_xlabel('PC')
-    ax.set_ylabel('fractional explained variance')
+    ax.set_ylabel('Fractional explained variance')
+
+    ax.xaxis.set_major_locator(MultipleLocator(1))
 
     plt.tight_layout()
 
@@ -53,6 +57,31 @@ def plot_explained_var(pcamodel):
     fn = f'{plot_dir}/explained_variance.pdf'
     fig.savefig(fn)
     fn = f'{plot_dir}/explained_variance.png'
+    fig.savefig(fn, dpi=200)
+
+
+def plot_explained_var_cumsum(pcamodel):
+    fig, ax = plt.subplots()
+
+    pc_ids = np.arange(1, pcamodel.n_components + 1)
+    ax.plot(pc_ids, pcamodel.explained_var.cumsum(), 'ko')
+
+    ax.axhline(0.95, c='r', ls='--')
+
+    ax.set_ylim(0., 1.)
+
+    ax.set_xlabel('PC')
+    ax.set_ylabel('Fractional explained variance')
+
+    ax.xaxis.set_major_locator(MultipleLocator(1))
+    ax.yaxis.set_minor_locator(MultipleLocator(0.05))
+
+    plt.tight_layout()
+
+    plot_dir = './pca_info'
+    fn = f'{plot_dir}/explained_variance_cumsum.pdf'
+    fig.savefig(fn)
+    fn = f'{plot_dir}/explained_variance_cumsum.png'
     fig.savefig(fn, dpi=200)
 
 

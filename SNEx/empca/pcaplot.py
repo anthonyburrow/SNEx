@@ -15,32 +15,36 @@ def plot_info(pcamodel):
 
 
 def plot_eigenvectors(pcamodel):
-    fig, ax = plt.subplots()
+    n_comp = 3
+    fig, ax = plt.subplots(n_comp, 1, sharey=True, sharex=True)
 
-    wave = pcamodel.wave
+    wave = pcamodel.wave * 1e-4
     eig = pcamodel.eigenvectors
 
-    n_comp = 3
-    for i in range(n_comp):
-        ax.plot(wave * 1e-4, eig[i], '-', label=f'PC{i + 1}', zorder=n_comp - i)
+    for i, _ax in enumerate(ax):
+        _ax.plot(wave, eig[i], '-', label=f'PC{i + 1}', c='tab:blue')
+        _ax.axhline(0., color='k', ls='--', zorder=-4)
+        _ax.text(0.9, 0.8, f'PC{i + 1}', transform=_ax.transAxes, fontsize=14)
 
-    ax.set_xlabel(r'Rest wavelength ($\mu m$)')
-    ax.set_ylabel(r'$(F - \mu_F) / \sigma_F$')
+    ax[0].set_xlabel(r'Rest wavelength ($\mu m$)')
+    [_ax.set_ylabel(r'$(F - \mu_F) / \sigma_F$') for _ax in ax]
 
-    ax.axhline(0., color='k', ls='--', zorder=-4)
+    ax[0].xaxis.set_minor_locator(MultipleLocator(0.05))
+    ax[0].yaxis.set_minor_locator(MultipleLocator(0.005))
+    ax[0].yaxis.set_major_locator(MultipleLocator(0.02))
 
-    ax.xaxis.set_minor_locator(MultipleLocator(0.05))
-    ax.yaxis.set_minor_locator(MultipleLocator(0.005))
-
-    ax.legend()
+    [_ax.tick_params(axis='both', which='major', labelsize=10) for _ax in ax]
 
     plt.tight_layout()
+    plt.subplots_adjust(hspace=0.)
 
     plot_dir = './pca_info'
     fn = f'{plot_dir}/eigenvectors.pdf'
     fig.savefig(fn)
     fn = f'{plot_dir}/eigenvectors.png'
     fig.savefig(fn, dpi=200)
+
+    plt.close('all')
 
 
 def plot_explained_var(pcamodel):

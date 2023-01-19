@@ -102,7 +102,6 @@ def plot_training(pcamodel):
     wave = pcamodel.wave
     training_flux = pcamodel.flux_train
     training_flux_var = pcamodel.flux_var_train
-    training_times = pcamodel.training_times
 
     training_flux, training_flux_var = pcamodel.descale(training_flux,
                                                         training_flux_var)
@@ -117,19 +116,6 @@ def plot_training(pcamodel):
     ax_compiled.set_xlim(5500., 11000.)
 
     ax_compiled.axvline(8400., color='k', ls='--', zorder=-4)
-
-    which_time = 0
-    times = training_times[:, which_time]
-    times = np.abs(training_times[:, 0] - training_times[:, 1])
-    min_time = times.min()
-    max_time = times.max()
-    times_norm = (times - min_time) / (max_time - min_time)
-    colors = plt.cm.Spectral(times_norm)
-    sm = plt.cm.ScalarMappable(cmap='Spectral',
-                               norm=plt.Normalize(vmin=min_time, vmax=max_time))
-    cbar = fig_compiled.colorbar(sm)
-    cbar.set_label(label=r'time past $B_{max}$', size=14.)
-    # cbar.set_label(label=r'$|t_{CSP} - t_{FIRE}|$', size=14.)
 
     for i in range(len(training_flux)):
         flux = training_flux[i]
@@ -151,8 +137,7 @@ def plot_training(pcamodel):
         ax.clear()
 
         # Compiled plot
-        ax_compiled.plot(wave, flux, '-', c=colors[i], lw=1., zorder=2,
-                         alpha=0.8,)
+        ax_compiled.plot(wave, flux, '-', lw=1., zorder=2, alpha=0.8,)
         # ax_compiled.fill_between(wave, flux - flux_err, flux + flux_err,
         #                          color='grey', zorder=1, alpha=0.5)
 

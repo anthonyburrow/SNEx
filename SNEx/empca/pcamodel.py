@@ -11,11 +11,10 @@ _empca_weight_method = 'normalized_variance'
 class PCAModel:
 
     def __init__(self, wave, flux_train, flux_var_train=None,
-                 n_components=None, training_times=None, *args, **kwargs):
+                 n_components=None, *args, **kwargs):
         self.wave = wave
         self.flux_train = flux_train
         self.flux_var_train = flux_var_train
-        self.training_times = training_times
 
         self.n_components = n_components
         self.n_points = len(wave)

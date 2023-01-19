@@ -109,17 +109,11 @@ def _choose_spectrum(data_set, sn, predict_time, wave_mask):
 
     var = var * np.ones(len(flux))
 
-    print(flux)
-    print(var)
-
-    print(flux.shape)
-    print(var.shape)
-
     flux = flux[wave_mask]
     var = var[wave_mask]
 
     if np.isnan(flux).any():
-        print('ERROR: NaNs')
+        print(f'ERROR: NaNs for {sn}')
 
     return flux, var
 

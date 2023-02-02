@@ -130,7 +130,9 @@ def _choose_spectrum_no_extrapolation(data_set, sn, predict_time, wave_mask):
     spec_times = []
     for spec_file in spec_files:
         spec_time = float(spec_file[len(sn_dir) + 1 + 6:-4])
-        if abs(spec_time - predict_time) > allowed_no_extrapolation_time:
+        # if abs(spec_time - predict_time) > allowed_no_extrapolation_time:
+        #     continue
+        if not -5 < spec_time - predict_time < 10:
             continue
 
         data = np.loadtxt(spec_file)

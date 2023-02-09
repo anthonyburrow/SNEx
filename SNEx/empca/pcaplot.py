@@ -22,19 +22,31 @@ def plot_eigenvectors(pcamodel):
     eig = pcamodel.eigenvectors
 
     for i, _ax in enumerate(ax):
-        _ax.plot(wave, eig[i], '-', label=f'PC{i + 1}', c='tab:blue')
-        _ax.axhline(0., color='k', ls='--', zorder=-4)
+        _ax.plot(wave, eig[i], '-', label=f'PC{i + 1}', c='k')
+        _ax.axhline(0., color='tab:blue', ls='--', zorder=-4)
         _ax.text(0.9, 0.7, f'PC{i + 1}', transform=_ax.transAxes, fontsize=12)
 
-    ax[-1].set_xlabel(r'Rest wavelength ($\mu m$)')
-    # [_ax.set_ylabel(r'$(F - \mu_F) / \sigma_F$', fontsize=10) for _ax in ax]
-    plt.ylabel(r'$(F - \mu_F) / \sigma_F$', fontsize=10)
+        # Telluric regions
+        _ax.axvspan(1.2963, 1.4419, alpha=0.8, color='grey', zorder=-10)
+        _ax.axvspan(1.7421, 1.9322, alpha=0.8, color='grey', zorder=-10)
 
+    ax[-1].set_xlabel(r'Rest wavelength ($\mu m$)', fontsize=12)
+    fig.supylabel(r'$(F - \mu_F) / \sigma_F$', fontsize=12)
+
+    y_interval = 0.05
     ax[0].xaxis.set_minor_locator(MultipleLocator(0.05))
     ax[0].yaxis.set_minor_locator(MultipleLocator(0.01))
-    ax[0].yaxis.set_major_locator(MultipleLocator(0.04))
+    ax[0].yaxis.set_major_locator(MultipleLocator(y_interval))
 
-    [_ax.tick_params(axis='both', which='major', labelsize=10) for _ax in ax]
+    plt.yticks([-y_interval, 0., y_interval])
+
+    [_ax.tick_params(axis='both', which='major', labelsize=10, length=3.)
+     for _ax in ax]
+    [_ax.tick_params(axis='both', which='minor', length=1.5)
+     for _ax in ax]
+
+    # [_ax.grid(axis='x', which='both')
+    #  for _ax in ax]
 
     plt.tight_layout()
     plt.subplots_adjust(hspace=0.)

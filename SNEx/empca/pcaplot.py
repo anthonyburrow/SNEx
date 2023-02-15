@@ -124,8 +124,8 @@ def plot_training(pcamodel):
     ax_compiled.set_xlabel('Rest wavelength [A]')
     ax_compiled.set_ylabel('Normalized flux')
     ax_compiled.set_yscale('log')
-    # ax_compiled.set_ylim(3e-2, 6.)
-    ax_compiled.set_xlim(5500., 11000.)
+    ax_compiled.set_ylim(1e-4, 3.)
+    ax_compiled.set_xlim(5500., 23000.)
 
     ax_compiled.axvline(8400., color='k', ls='--', zorder=-4)
 
@@ -141,10 +141,10 @@ def plot_training(pcamodel):
         ax.set_xlabel('Rest wavelength [A]')
         ax.set_ylabel('Normalized flux')
         ax.set_yscale('log')
-        # ax.set_ylim(3e-2, 6.)
-        ax.set_xlim(5500., 11000.)
+        ax.set_ylim(1e-4, 3.)
+        ax.set_xlim(5500., 23000.)
 
-        fn = f'{plot_dir}/training_{i}.png'
+        fn = f'{plot_dir}/training_{i + 1}.png'
         fig.savefig(fn, dpi=200)
         ax.clear()
 

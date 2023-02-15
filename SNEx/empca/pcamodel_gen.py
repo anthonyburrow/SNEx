@@ -11,7 +11,7 @@ from ..util.misc import between_mask, get_normalization
 # Model properties
 n_components = 10
 allowed_extrapolation_time = 1.
-allowed_no_extrapolation_time = 5.
+allowed_no_interpolation_time = 5.
 
 try:
     _snexgen_dir = f'{Path.home()}/dev/SNEx_gen'
@@ -108,7 +108,7 @@ def _get_fit_mask(wave, fit_features=None, fit_range=None, *args, **kwargs):
     return fit_mask
 
 
-def _choose_spectrum_no_extrapolation(data_set, sn, predict_time, wave_mask):
+def _choose_spectrum_no_interpolation(data_set, sn, predict_time, wave_mask):
     if data_set == 'csp':
         cutoff_mask = csp_cutoff_mask
         sn_dir = f'{_csp_spex_dir}/{sn}'
@@ -130,7 +130,7 @@ def _choose_spectrum_no_extrapolation(data_set, sn, predict_time, wave_mask):
     spec_times = []
     for spec_file in spec_files:
         spec_time = float(spec_file[len(sn_dir) + 1 + 6:-4])
-        # if abs(spec_time - predict_time) > allowed_no_extrapolation_time:
+        # if abs(spec_time - predict_time) > allowed_no_interpolation_time:
         #     continue
         if not -5 < spec_time - predict_time < 10:
             continue
@@ -165,7 +165,7 @@ def _choose_spectrum_no_extrapolation(data_set, sn, predict_time, wave_mask):
     return return_flux, return_var
 
 
-def _choose_spectrum_extrapolation(data_set, sn, predict_time, wave_mask):
+def _choose_spectrum_interpolation(data_set, sn, predict_time, wave_mask):
     if data_set == 'csp':
         model_dir = _csp_model_dir
         time_info = csp_time_info
@@ -193,6 +193,9 @@ def _choose_spectrum_extrapolation(data_set, sn, predict_time, wave_mask):
     flux = flux.squeeze()
     var = var.squeeze()
 
+    if var > 0.03:
+        raise FileNotFoundError(f'ERROR: High variance for {sn}')
+
     var = var * np.ones(len(flux))
 
     flux = flux[wave_mask]
@@ -207,13 +210,13 @@ def _choose_spectrum_extrapolation(data_set, sn, predict_time, wave_mask):
 
 def _choose_spectrum(*args, **kwargs):
     try:
-        flux, var = _choose_spectrum_extrapolation(*args, **kwargs)
-        extrapolated = True
+        flux, var = _choose_spectrum_interpolation(*args, **kwargs)
+        interpolated = True
     except FileNotFoundError:
-        flux, var = _choose_spectrum_no_extrapolation(*args, **kwargs)
-        extrapolated = False
+        flux, var = _choose_spectrum_no_interpolation(*args, **kwargs)
+        interpolated = False
 
-    return flux, var, extrapolated
+    return flux, var, interpolated
 
 
 def _scale_nir(csp_flux, csp_wave_mask, nir_flux, nir_wave_mask):
@@ -252,28 +255,28 @@ def _get_spectra(predict_time, csp_wave_mask, nir_wave_mask):
     includes_nir = np.any(nir_wave_mask)   # PCA range covers NIR region
 
     count = 0
-    n_csp_extrapolated = 0
-    n_nir_extrapolated = 0
+    n_csp_interpolated = 0
+    n_nir_interpolated = 0
     for sn in os.listdir(_csp_spex_dir):
         if not includes_opt:
             continue
 
-        csp_flux, csp_flux_var, csp_extrapolated = \
+        csp_flux, csp_flux_var, csp_interpolated = \
             _choose_spectrum('csp', sn, predict_time, csp_wave_mask)
 
         if csp_flux is None:
             continue
 
         if not includes_nir:
-            if csp_extrapolated:
-                n_csp_extrapolated += 1
+            if csp_interpolated:
+                n_csp_interpolated += 1
             count += 1
 
             training_flux.append(csp_flux)
             training_flux_var.append(csp_flux_var)
             continue
 
-        nir_flux, nir_flux_var, nir_extrapolated = \
+        nir_flux, nir_flux_var, nir_interpolated = \
             _choose_spectrum('nir', sn, predict_time, nir_wave_mask)
 
         if nir_flux is None:
@@ -295,30 +298,35 @@ def _get_spectra(predict_time, csp_wave_mask, nir_wave_mask):
         training_flux.append(flux)
         training_flux_var.append(flux_var)
 
-        if csp_extrapolated:
-            n_csp_extrapolated += 1
-        if nir_extrapolated:
-            n_nir_extrapolated += 1
+        interp_str = ''
+        if csp_interpolated:
+            n_csp_interpolated += 1
+            interp_str += 'C'
+        if nir_interpolated:
+            n_nir_interpolated += 1
+            interp_str += 'N'
         count += 1
+
+        print(f'{count} : {sn} : {interp_str}')
 
     for sn in os.listdir(_nir_spex_dir):
         if includes_opt:
             # optical is already accounted for
             continue
 
-        nir_flux, nir_flux_var, nir_extrapolated = \
+        nir_flux, nir_flux_var, nir_interpolated = \
             _choose_spectrum('nir', sn, predict_time, nir_wave_mask)
 
         training_flux.append(nir_flux)
         training_flux_var.append(nir_flux_var)
 
-        if nir_extrapolated:
-            n_nir_extrapolated += 1
+        if nir_interpolated:
+            n_nir_interpolated += 1
         count += 1
 
     msg = (f'Total sample size: {len(training_flux)}\n'
-           f'Extrapolated: {n_csp_extrapolated} / {count} (CSP),'
-           f' {n_nir_extrapolated} / {count} (NIR)')
+           f'Interpolated: {n_csp_interpolated} / {count} (CSP),'
+           f' {n_nir_interpolated} / {count} (NIR)')
     print(msg)
 
     return np.array(training_flux), np.array(training_flux_var)

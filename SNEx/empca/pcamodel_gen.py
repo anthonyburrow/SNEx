@@ -186,15 +186,16 @@ def _choose_spectrum_interpolation(data_set, sn, predict_time, wave_mask):
     t1 += allowed_extrapolation_time
 
     if not t0 < predict_time < t1:
-        raise FileNotFoundError
+        raise FileNotFoundError(f'{data_set} ERROR: Cannot interpolate at'
+                                f' predict time for {sn}')
 
     # Predict using the GPR
     flux, var = model.predict(np.array([[predict_time]]))
     flux = flux.squeeze()
     var = var.squeeze()
 
-    if var > 0.03:
-        raise FileNotFoundError(f'ERROR: High variance for {sn}')
+    if data_set == 'csp' and var > 0.03:
+        raise FileNotFoundError(f'{data_set} ERROR: High variance for {sn}')
 
     var = var * np.ones(len(flux))
 
@@ -203,7 +204,7 @@ def _choose_spectrum_interpolation(data_set, sn, predict_time, wave_mask):
 
     # Check NaNs (problematic if this occurs...)
     if np.isnan(flux).any():
-        raise FileNotFoundError(f'ERROR: NaNs for {sn}')
+        raise FileNotFoundError(f'{data_set} ERROR: NaNs for {sn}')
 
     return flux, var
 
@@ -212,7 +213,9 @@ def _choose_spectrum(*args, **kwargs):
     try:
         flux, var = _choose_spectrum_interpolation(*args, **kwargs)
         interpolated = True
-    except FileNotFoundError:
+    except FileNotFoundError as e:
+        # if str(e)[:3] == 'nir':
+        #     print(e)
         flux, var = _choose_spectrum_no_interpolation(*args, **kwargs)
         interpolated = False
 

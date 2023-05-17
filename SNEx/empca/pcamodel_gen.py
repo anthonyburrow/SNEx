@@ -56,6 +56,20 @@ nir_total_wave = np.linspace(*nir_total_wave_range, nir_total_n_points)
 nir_cutoff_mask = between_mask(nir_total_wave, nir_required_range)
 nir_total_wave = nir_total_wave[nir_cutoff_mask]
 
+_telluric_to_mask = [
+    (5879., 5909.),
+    (7450., 7765.),
+]
+
+# ------------------ TEST -------------------------------
+from pandas import ExcelFile, read_excel
+_data_dir = f'{Path.home()}/data'
+fn = f'{_data_dir}/CSP/CSP.xlsx'
+xls = ExcelFile(fn)
+df_I = read_excel(xls, 'CSPI')
+df_II = read_excel(xls, 'CSPII')
+# ------------------ TEST -------------------------------
+
 
 def _get_wave_mask(regime=None, predict_range=None, predict_features=None,
                    fit_features=None, fit_range=None, *args, **kwargs):
@@ -91,6 +105,15 @@ def _get_wave_mask(regime=None, predict_range=None, predict_features=None,
         csp_mask += between_mask(csp_total_wave, fit_range)
         nir_mask += between_mask(nir_total_wave, fit_range)
 
+    # Remove telluric regions from PCA
+    csp_telluric_mask = np.full(len(csp_total_wave), False)
+    nir_telluric_mask = np.full(len(nir_total_wave), False)
+    for wave_range in _telluric_to_mask:
+        csp_telluric_mask += between_mask(csp_total_wave, wave_range)
+        nir_telluric_mask += between_mask(nir_total_wave, wave_range)
+    csp_mask[csp_telluric_mask] = False
+    nir_mask[nir_telluric_mask] = False
+
     return csp_mask, nir_mask
 
 
@@ -122,6 +145,7 @@ def _choose_spectrum_no_interpolation(data_set, sn, predict_time, wave_mask):
         return None, None
 
     spec_files = [f for f in spec_files if f[-4:] == '.dat']
+    spec_files = [f for f in spec_files if f[0] != '_']
     spec_files = [f'{sn_dir}/{f}' for f in spec_files]
 
     # Get valid spectra for each SN, then inter/extrapolate
@@ -197,6 +221,9 @@ def _choose_spectrum_interpolation(data_set, sn, predict_time, wave_mask):
     if data_set == 'csp' and var > 0.03:
         raise FileNotFoundError(f'{data_set} ERROR: High variance for {sn}')
 
+    if data_set == 'nir' and var > 0.03:
+        raise FileNotFoundError(f'{data_set} ERROR: High variance for {sn}')
+
     var = var * np.ones(len(flux))
 
     flux = flux[wave_mask]
@@ -260,6 +287,10 @@ def _get_spectra(predict_time, csp_wave_mask, nir_wave_mask):
     count = 0
     n_csp_interpolated = 0
     n_nir_interpolated = 0
+    # ------------------ TEST -------------------------------
+    TEST_z_values = []
+    # ------------------ TEST -------------------------------
+
     for sn in os.listdir(_csp_spex_dir):
         if not includes_opt:
             continue
@@ -311,6 +342,34 @@ def _get_spectra(predict_time, csp_wave_mask, nir_wave_mask):
         count += 1
 
         print(f'{count} : {sn} : {interp_str}')
+
+    # ------------------ TEST -------------------------------
+        TEST_z_found = False
+        for TEST_i, TEST_sn in df_I.iterrows():
+            if TEST_z_found:
+                break
+            TEST_name = TEST_sn['Name']
+            if TEST_name != sn:
+                continue
+            TEST_z = TEST_sn['zmcb']
+            TEST_z_values.append(TEST_z)
+            TEST_z_found = True
+        for TEST_i, TEST_sn in df_II.iterrows():
+            if TEST_z_found:
+                break
+            TEST_name = TEST_sn['Name']
+            if TEST_name != sn:
+                continue
+            TEST_z = TEST_sn['zhel']
+            TEST_z_values.append(TEST_z)
+            TEST_z_found = True
+        if not TEST_z_found:
+            print(f'z not found for {sn}')
+
+    print(TEST_z_values)
+    print(f'median z: {np.median(TEST_z_values)}')
+    print(f'mean z: {np.mean(TEST_z_values)}')
+    # ------------------ TEST -------------------------------
 
     for sn in os.listdir(_nir_spex_dir):
         if includes_opt:

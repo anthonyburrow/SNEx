@@ -114,5 +114,13 @@ class PCAModel:
         elif weight_method == 'normalized_variance':
             min_var = self.flux_var_train.min(axis=0)
             max_var = self.flux_var_train.max(axis=0)
-            norm_var = (self.flux_var_train - min_var) / (max_var - min_var)
+            # norm_var = (self.flux_var_train - min_var) / (max_var - min_var)
+            norm_var = self.flux_var_train / max_var
+
+            scale_range = 0.0, 0.75
+            norm_var *= (scale_range[1] - scale_range[0]) + scale_range[0]
+
             return 1. - norm_var
+        elif weight_method == 'normalized_variance_2':
+            min_var = self.flux_var_train.min(axis=0)
+            return min_var / self.flux_var_train

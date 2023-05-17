@@ -71,7 +71,9 @@ class PCA(ExtrapolationModel):
         data_var = self._calc_variance(interp_flux, interp_var,
                                        fit_vectors, *args, **kwargs)
 
-        self._variance = model_var + data_var
+        self._variance = model_var # + data_var
+
+
 
     def predict(self, *args, **kwargs):
         y_pred, y_var_pred = \

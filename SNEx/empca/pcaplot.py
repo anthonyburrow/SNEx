@@ -15,8 +15,8 @@ def plot_info(pcamodel):
 
 
 def plot_eigenvectors(pcamodel):
-    n_comp = 8
-    fig, ax = plt.subplots(n_comp, 1, sharey=True, sharex=True, figsize=(6, 8))
+    n_comp = 4
+    fig, ax = plt.subplots(n_comp, 1, sharey=True, sharex=True, figsize=(6, 6))
 
     wave = pcamodel.wave * 1e-4
     eig = pcamodel.eigenvectors
@@ -24,7 +24,7 @@ def plot_eigenvectors(pcamodel):
     for i, _ax in enumerate(ax):
         _ax.plot(wave, eig[i], '-', label=f'PC{i + 1}', c='k')
         _ax.axhline(0., color='tab:blue', ls='--', zorder=-4)
-        _ax.text(0.9, 0.7, f'PC{i + 1}', transform=_ax.transAxes, fontsize=12)
+        _ax.text(0.9, 0.8, f'PC{i + 1}', transform=_ax.transAxes, fontsize=12)
 
         # Telluric regions
         _ax.axvspan(1.2963, 1.4419, alpha=0.8, color='grey', zorder=-10)
@@ -91,7 +91,7 @@ def plot_explained_var_cumsum(pcamodel):
 
     ax.axhline(0.95, c='r', ls='--')
 
-    ax.set_ylim(0., 1.)
+    ax.set_ylim(0.4, 1.)
 
     ax.set_xlabel('PC')
     ax.set_ylabel('Fractional explained variance')
@@ -121,13 +121,17 @@ def plot_training(pcamodel):
     fig, ax = plt.subplots()
     fig_compiled, ax_compiled = plt.subplots()
 
-    ax_compiled.set_xlabel('Rest wavelength [A]')
+    ax_compiled.set_xlabel(r'Rest wavelength [$\mu m$]')
     ax_compiled.set_ylabel('Normalized flux')
     ax_compiled.set_yscale('log')
     ax_compiled.set_ylim(1e-4, 3.)
-    ax_compiled.set_xlim(5500., 23000.)
+    ax_compiled.set_xlim(0.5500, 2.3000)
 
-    ax_compiled.axvline(8400., color='k', ls='--', zorder=-4)
+    ax_compiled.axvline(0.8400, color='r', ls='--', zorder=-4)
+
+    ax_compiled.grid(which='both', axis='x', linestyle='-')
+    ax_compiled.xaxis.set_major_locator(MultipleLocator(0.2))
+    ax_compiled.xaxis.set_minor_locator(MultipleLocator(0.0500))
 
     for i in range(len(training_flux)):
         flux = training_flux[i]
@@ -135,8 +139,8 @@ def plot_training(pcamodel):
 
         # Individual plots
         ax.plot(wave, flux, 'k-', zorder=2)
-        ax.fill_between(wave, flux - flux_err, flux + flux_err, color='grey',
-                        zorder=1)
+        ax.fill_between(wave, flux - flux_err, flux + flux_err,
+                        color='grey', zorder=1)
 
         ax.set_xlabel('Rest wavelength [A]')
         ax.set_ylabel('Normalized flux')
@@ -149,7 +153,7 @@ def plot_training(pcamodel):
         ax.clear()
 
         # Compiled plot
-        ax_compiled.plot(wave, flux, '-', lw=1., zorder=2, alpha=0.8,)
+        ax_compiled.plot(wave * 1e-4, flux, '-', lw=1., zorder=2, alpha=0.8,)
         # ax_compiled.fill_between(wave, flux - flux_err, flux + flux_err,
         #                          color='grey', zorder=1, alpha=0.5)
 

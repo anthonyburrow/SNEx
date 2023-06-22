@@ -87,14 +87,16 @@ def plot_explained_var_cumsum(pcamodel):
     fig, ax = plt.subplots()
 
     pc_ids = np.arange(1, pcamodel.n_components + 1)
-    ax.plot(pc_ids, pcamodel.explained_var.cumsum(), 'ko', ms=6.)
+    cumul_var = pcamodel.explained_var.cumsum()
+    print('Cumulative var explained: ', cumul_var)
+    ax.plot(pc_ids, cumul_var, 'ko', ms=6.)
 
     ax.axhline(0.95, c='r', ls='--')
 
     ax.set_ylim(0.4, 1.)
 
     ax.set_xlabel('PC')
-    ax.set_ylabel('Fractional explained variance')
+    ax.set_ylabel('Cumulative Variance Explained')
 
     ax.xaxis.set_major_locator(MultipleLocator(1))
     ax.yaxis.set_minor_locator(MultipleLocator(0.05))

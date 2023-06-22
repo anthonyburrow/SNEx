@@ -21,17 +21,17 @@ except FileNotFoundError:
     _snexgen_dir = f'C:/dev/SNEx_gen'
 
 _spex_interp_dir = f'{_snexgen_dir}/model_scripts/spex'
-_csp_spex_dir = f'{_spex_interp_dir}/csp'
+_csp_spex_dir = f'{_spex_interp_dir}/csp_no_telluric'
 _nir_spex_dir = f'{_spex_interp_dir}/nir'
 
 _interp_model_dir = f'{_snexgen_dir}/model_scripts/time_interp'
-_csp_model_dir = f'{_interp_model_dir}/csp'
+_csp_model_dir = f'{_interp_model_dir}/csp_no_telluric'
 _nir_model_dir = f'{_interp_model_dir}/nir'
 
 # Time range information
 dtype = [('sn', 'U16'), ('t0', np.float64), ('t1', np.float64)]
 
-fn = f'{_interp_model_dir}/time_info_csp.txt'
+fn = f'{_interp_model_dir}/time_info_csp_no_telluric.txt'
 csp_time_info = np.loadtxt(fn, dtype=dtype)
 
 fn = f'{_interp_model_dir}/time_info_nir.txt'
@@ -57,8 +57,8 @@ nir_cutoff_mask = between_mask(nir_total_wave, nir_required_range)
 nir_total_wave = nir_total_wave[nir_cutoff_mask]
 
 _telluric_to_mask = [
-    (5879., 5909.),
-    (7450., 7765.),
+    # (5879., 5909.),
+    # (7450., 7765.),
 ]
 
 # ------------------ TEST -------------------------------

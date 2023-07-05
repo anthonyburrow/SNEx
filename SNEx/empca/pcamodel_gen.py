@@ -62,12 +62,12 @@ _telluric_to_mask = [
 ]
 
 # ------------------ TEST -------------------------------
-from pandas import ExcelFile, read_excel
-_data_dir = f'{Path.home()}/data'
-fn = f'{_data_dir}/CSP/CSP.xlsx'
-xls = ExcelFile(fn)
-df_I = read_excel(xls, 'CSPI')
-df_II = read_excel(xls, 'CSPII')
+# from pandas import ExcelFile, read_excel
+# _data_dir = f'{Path.home()}/data'
+# fn = f'{_data_dir}/CSP/CSP.xlsx'
+# xls = ExcelFile(fn)
+# df_I = read_excel(xls, 'CSPI')
+# df_II = read_excel(xls, 'CSPII')
 # ------------------ TEST -------------------------------
 
 
@@ -288,7 +288,7 @@ def _get_spectra(predict_time, csp_wave_mask, nir_wave_mask):
     n_csp_interpolated = 0
     n_nir_interpolated = 0
     # ------------------ TEST -------------------------------
-    TEST_z_values = []
+    # TEST_z_values = []
     # ------------------ TEST -------------------------------
 
     for sn in os.listdir(_csp_spex_dir):
@@ -341,34 +341,34 @@ def _get_spectra(predict_time, csp_wave_mask, nir_wave_mask):
             interp_str += 'N'
         count += 1
 
-        print(f'{count} : {sn} : {interp_str}')
+        # print(f'{count} : {sn} : {interp_str}')
 
     # ------------------ TEST -------------------------------
-        TEST_z_found = False
-        for TEST_i, TEST_sn in df_I.iterrows():
-            if TEST_z_found:
-                break
-            TEST_name = TEST_sn['Name']
-            if TEST_name != sn:
-                continue
-            TEST_z = TEST_sn['zmcb']
-            TEST_z_values.append(TEST_z)
-            TEST_z_found = True
-        for TEST_i, TEST_sn in df_II.iterrows():
-            if TEST_z_found:
-                break
-            TEST_name = TEST_sn['Name']
-            if TEST_name != sn:
-                continue
-            TEST_z = TEST_sn['zhel']
-            TEST_z_values.append(TEST_z)
-            TEST_z_found = True
-        if not TEST_z_found:
-            print(f'z not found for {sn}')
+        # TEST_z_found = False
+        # for TEST_i, TEST_sn in df_I.iterrows():
+        #     if TEST_z_found:
+        #         break
+        #     TEST_name = TEST_sn['Name']
+        #     if TEST_name != sn:
+        #         continue
+        #     TEST_z = TEST_sn['zmcb']
+        #     TEST_z_values.append(TEST_z)
+        #     TEST_z_found = True
+        # for TEST_i, TEST_sn in df_II.iterrows():
+        #     if TEST_z_found:
+        #         break
+        #     TEST_name = TEST_sn['Name']
+        #     if TEST_name != sn:
+        #         continue
+        #     TEST_z = TEST_sn['zhel']
+        #     TEST_z_values.append(TEST_z)
+        #     TEST_z_found = True
+        # if not TEST_z_found:
+        #     print(f'z not found for {sn}')
 
-    print(TEST_z_values)
-    print(f'median z: {np.median(TEST_z_values)}')
-    print(f'mean z: {np.mean(TEST_z_values)}')
+    # print(TEST_z_values)
+    # print(f'median z: {np.median(TEST_z_values)}')
+    # print(f'mean z: {np.mean(TEST_z_values)}')
     # ------------------ TEST -------------------------------
 
     for sn in os.listdir(_nir_spex_dir):

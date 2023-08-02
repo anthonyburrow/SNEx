@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.ticker import MultipleLocator
+from matplotlib.ticker import MultipleLocator, ScalarFormatter, NullFormatter
 
 from ..util.plot_setup import paper_plot
 paper_plot()
@@ -14,6 +14,50 @@ def plot_info(pcamodel):
     plt.close('all')
 
 
+highlight_regions = {
+    'Si II': {
+        'color': 'tab:blue',
+        'regions': [
+            (0.5650, 0.5900),
+            (0.5950, 0.6355),
+        ],
+    },
+    'O I': {
+        'color': 'tab:brown',
+        'regions': [
+            (0.7, 0.77),
+        ],
+    },
+    'Ca II': {
+        'color': 'tab:green',
+        'regions': [
+            (0.78, 0.86),
+        ],
+    },
+    'Mg II': {
+        'color': 'tab:orange',
+        'regions': [
+            (0.87, 0.925),
+            (0.95, 1.01),
+            (1.02, 1.075),
+        ],
+    },
+    'Si III': {
+        'color': 'tab:red',
+        'regions': [
+            (1.15, 1.24),
+            (1.26, 1.35),
+        ],
+    },
+    'Fe/Co': {
+        'color': 'tab:purple',
+        'regions': [
+            (1.5, 1.65),
+        ],
+    },
+}
+
+
 def plot_eigenvectors(pcamodel):
     n_comp = 4
     fig, ax = plt.subplots(n_comp, 1, sharey=True, sharex=True, figsize=(6, 6))
@@ -22,27 +66,64 @@ def plot_eigenvectors(pcamodel):
     eig = pcamodel.eigenvectors
 
     for i, _ax in enumerate(ax):
-        _ax.plot(wave, eig[i], '-', label=f'PC{i + 1}', c='k')
-        _ax.axhline(0., color='tab:blue', ls='--', zorder=-4)
-        _ax.text(0.9, 0.8, f'PC{i + 1}', transform=_ax.transAxes, fontsize=12)
+        plot_params = {
+            'ls': '-',
+            'lw': 1.,
+            'c': 'k'
+        }
+        _ax.semilogx(wave, eig[i], label=f'PC{i + 1}', **plot_params)
+        _ax.axhline(0., color='grey', ls='--', zorder=-4)
+        _ax.text(0.9, 0.8, f'PC$_{i + 1}$', transform=_ax.transAxes, fontsize=12)
+
+        # Highlight regions
+        plot_params['lw'] = 1.3
+        for ion in highlight_regions:
+            regions = highlight_regions[ion]['regions']
+            for reg_min, reg_max in regions:
+                mask = (reg_min < wave) & (wave < reg_max)
+                plot_params['c'] = highlight_regions[ion]['color']
+                _ax.semilogx(wave[mask], eig[i][mask], **plot_params)
+
+        # _ax.axvline(0.9227, color='red', ls='--')
+        # _ax.axvline(1.0092, color='red', ls='--')
+        # _ax.axvline(1.0927, color='red', ls='--')
 
         # Telluric regions
         _ax.axvspan(1.2963, 1.4419, alpha=0.8, color='grey', zorder=-10)
         _ax.axvspan(1.7421, 1.9322, alpha=0.8, color='grey', zorder=-10)
 
+    for ion in highlight_regions:
+        regions = highlight_regions[ion]['regions']
+        color = highlight_regions[ion]['color']
+
+        x_pos = 0.5 * (regions[0][0] + regions[-1][-1])
+        arrowprops = {
+            'arrowstyle': '-[',
+            'lw': 0.8,
+            'shrinkA': 0.05,
+            'color': color
+        }
+        ax[0].annotate(ion, xy=(x_pos, 0.03), xycoords='data',
+                       xytext=(x_pos, 0.05), textcoords='data',
+                       fontsize=8., arrowprops=arrowprops, ha='center',
+                       va='center', c=color)
+
     ax[-1].set_xlabel(r'Rest wavelength ($\mu m$)', fontsize=12)
     fig.supylabel(r'$(F - \mu_F) / \sigma_F$', fontsize=12)
 
-    y_interval = 0.05
     ax[0].xaxis.set_minor_locator(MultipleLocator(0.05))
+    ax[0].xaxis.set_major_locator(MultipleLocator(0.2))
+    ax[0].xaxis.set_major_formatter(ScalarFormatter())
+    ax[0].xaxis.set_minor_formatter(NullFormatter())
+
+    y_interval = 0.05
     ax[0].yaxis.set_minor_locator(MultipleLocator(0.01))
     ax[0].yaxis.set_major_locator(MultipleLocator(y_interval))
-
     plt.yticks([-y_interval, 0., y_interval])
 
     [_ax.tick_params(axis='both', which='major', labelsize=10, length=3.)
      for _ax in ax]
-    [_ax.tick_params(axis='both', which='minor', length=1.5)
+    [_ax.tick_params(axis='both', which='minor', length=1.8)
      for _ax in ax]
 
     # [_ax.grid(axis='x', which='both')

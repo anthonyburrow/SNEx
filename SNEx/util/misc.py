@@ -51,7 +51,10 @@ def setup_clean_dir(directory):
             print(f'Failed to delete {fp}. Reason: {e}')
 
 
-def get_normalization(flux, norm_method=None, *args, **kwargs):
+def get_normalization(flux, norm_method=None):
+    if norm_method is None:
+        norm_method = 'mean'
+
     if norm_method == 'mean' or norm_method is None:
         norm = flux.mean(axis=-1)
     if norm_method == 'median':

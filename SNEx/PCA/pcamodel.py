@@ -35,9 +35,6 @@ class PCAModel:
         new_flux = (flux * std) + mean
         new_flux_var = flux_var * std**2
 
-        # new_flux = flux + mean
-        # new_flux_var = flux_var
-
         return new_flux, new_flux_var
 
     def scale(self, flux, flux_var, mask=None):
@@ -46,9 +43,6 @@ class PCAModel:
 
         new_flux = (flux - mean) / std
         new_flux_var = flux_var / std**2
-
-        # new_flux = flux - mean
-        # new_flux_var = flux_var
 
         return new_flux, new_flux_var
 
@@ -80,20 +74,6 @@ class PCAModel:
         y_pred = (self.eigenvectors[:n_components].T @ fit_eigenvalues).T
         residual = self.flux_train - y_pred
         model_var = residual.var(axis=0)
-
-        # import matplotlib.pyplot as plt
-        # fig, ax = plt.subplots()
-        # for i in range(len(self.flux_train)):
-        #     ax.plot(self.wave, self.flux_train[i] + self.mean, color='k')
-        #     ax.plot(self.wave, y_pred[i] + self.mean, color='r')
-
-        #     ax.axvline(8400., color='k', ls='--')
-
-        #     ax.set_yscale('log')
-
-        #     fn = f'test_{i}.png'
-        #     fig.savefig(fn, dpi=200)
-        #     ax.clear()
 
         return model_var
 

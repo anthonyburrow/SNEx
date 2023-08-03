@@ -1,15 +1,10 @@
 import numpy as np
 from spextractor import Spextractor
-from os.path import dirname
 
 from .extrapolationmodel import ExtrapolationModel
-from ..empca.pcamodel_gen import gen_model
-from ..empca.pcaplot import plot_info
-from ..util.feature_ranges import feature_ranges
-from ..util.misc import get_normalization, setup_clean_dir
-
-
-_model_dir = f'{dirname(__file__)}/PCA_models'
+from ..PCA.load import load_model
+from ..PCA.pcaplot import plot_info
+from ..util.misc import setup_clean_dir
 
 
 class PCA(ExtrapolationModel):
@@ -17,10 +12,10 @@ class PCA(ExtrapolationModel):
     def __init__(self, n_components=None, plot_pca=False, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self._prune_fit_features(*args, **kwargs)
+        # self._prune_fit_features(*args, **kwargs)
 
         # Load model information
-        self._model = gen_model(*args, **kwargs)
+        self._model = load_model(*args, **kwargs)
         self._variance = np.zeros(self._model.n_points)
 
         total_components = self._model.n_components
@@ -38,17 +33,19 @@ class PCA(ExtrapolationModel):
         self._save_info(plot=plot_pca)
 
     def fit(self, calc_var=True, *args, **kwargs):
-        # Get interpolated flux at PCA wavelengths
+        # Interpolate data to get on the same waves as eigenvectors
         fit_mask = (self.data[0, 0] <= self._model.wave) & \
                    (self._model.wave <= self.data[-1, 0])
 
         spex = Spextractor(self.data, auto_prune=False, verbose=False)
         interp_flux, interp_var = spex.predict(self._model.wave[fit_mask])
+        interp_flux *= spex.fmax_out
+        interp_var *= spex.fmax_out**2
 
         # Normalize interpolation the same way
-        norm = get_normalization(interp_flux, *args, **kwargs)
-        interp_flux /= norm
-        interp_var /= norm**2
+        # norm = get_normalization(interp_flux, *args, **kwargs)
+        # interp_flux /= norm
+        # interp_var /= norm**2
 
         # Scale (subtract mean) from interpolation
         interp_flux, interp_var = self._model.scale(interp_flux, interp_var,
@@ -71,9 +68,7 @@ class PCA(ExtrapolationModel):
         data_var = self._calc_variance(interp_flux, interp_var,
                                        fit_vectors, *args, **kwargs)
 
-        self._variance = model_var # + data_var
-
-
+        self._variance = model_var + data_var
 
     def predict(self, *args, **kwargs):
         y_pred, y_var_pred = \
@@ -91,22 +86,22 @@ class PCA(ExtrapolationModel):
     def __str__(self):
         return ''
 
-    def _prune_fit_features(self, fit_features=None, *args, **kwargs):
-        if fit_features is None:
-            return
-        if not fit_features:
-            return
+    # def _prune_fit_features(self, fit_features=None, *args, **kwargs):
+    #     if fit_features is None:
+    #         return
+    #     if not fit_features:
+    #         return
 
-        wave = self.data[:, 0]
-        mask = np.full(len(self.data), False)
-        for feature in fit_features:
-            wave_range = feature_ranges[feature]
-            sub_mask = \
-                (wave_range[0] <= wave) & (wave <= wave_range[1])
-            mask += sub_mask
+    #     wave = self.data[:, 0]
+    #     mask = np.full(len(self.data), False)
+    #     for feature in fit_features:
+    #         wave_range = feature_ranges[feature]
+    #         sub_mask = \
+    #             (wave_range[0] <= wave) & (wave <= wave_range[1])
+    #         mask += sub_mask
 
-        self.data = self.data[mask]
-        self._norm = get_normalization(self.data[:, 1], *args, **kwargs)
+    #     self.data = self.data[mask]
+    #     self._norm = get_normalization(self.data[:, 1], *args, **kwargs)
 
     def _fit_function(self, flux, eigenvectors):
         return eigenvectors @ flux.T

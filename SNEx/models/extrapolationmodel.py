@@ -1,15 +1,29 @@
 from ..util.fitting import *
-from ..util.misc import prune_data
-from ..util.misc import get_normalization
+from ..util.misc import prune_data, get_normalization, between_mask
+
+
+normalization_region = (5000., 8400.)
+norm_method = 'mean'
 
 
 class ExtrapolationModel:
 
     def __init__(self, data, fit_range=None, *args, **kwargs):
+        # Separates SNEx.data (original, preprocessed) from
+        # ExtrapolationModel.data (normalized, pruned)
         self.data = data.copy()
-        self.data = prune_data(self.data, fit_range)
 
-        self._norm = get_normalization(self.data[:, 1], *args, **kwargs)
+        # Get normalization before pruning
+        # TODO: WARN IF NO DATA IN normalization_region
+        norm_mask = between_mask(self.data[:, 0], normalization_region)
+        self._norm = get_normalization(self.data[norm_mask, 1], norm_method)
+        self.data[:, 1] /= self._norm
+        try:
+            self.data[:, 2] /= self._norm
+        except IndexError:
+            pass
+
+        self.data = prune_data(self.data, fit_range)
 
         self._params = None
 

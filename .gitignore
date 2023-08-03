@@ -6,6 +6,8 @@ ex_data/
 model_scripts/
 testing/
 
+SNEx/PCA/PCA_models
+
 example/*.png
 example/*.dat
 example/training_spec

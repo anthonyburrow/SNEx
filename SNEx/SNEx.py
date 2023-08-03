@@ -12,7 +12,7 @@ class SNEx:
         if isinstance(data, str):
             self.data = read_spectrum(data, *args, **kwargs)
         else:
-            self.data = data
+            self.data = data.copy()
 
     def predict(self, regime='nir', *args, **kwargs):
         """Make a prediction to extrapolate spectra in the NIR or UV.
@@ -67,10 +67,8 @@ class SNEx:
         else:
             raise RuntimeError('Unknown wavelength regime.')
 
-        # TODO: Add extra attributes from specific model to SNEx model here
-
         model.fit(*args, **kwargs)
-        # print(f'   {model}')
+
         return model.predict(*args, **kwargs)
 
     def _get_NIR_model(self, data, extrap_method=None, *args, **kwargs):

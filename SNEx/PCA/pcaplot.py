@@ -89,8 +89,8 @@ def plot_eigenvectors(pcamodel):
         # _ax.axvline(1.0927, color='red', ls='--')
 
         # Telluric regions
-        _ax.axvspan(1.2963, 1.4419, alpha=0.8, color='grey', zorder=-10)
-        _ax.axvspan(1.7421, 1.9322, alpha=0.8, color='grey', zorder=-10)
+        _ax.axvspan(1.2963, 1.4419, alpha=0.5, color='grey', zorder=-10)
+        _ax.axvspan(1.7421, 1.9322, alpha=0.5, color='grey', zorder=-10)
 
     for ion in highlight_regions:
         regions = highlight_regions[ion]['regions']

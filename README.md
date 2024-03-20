@@ -15,4 +15,4 @@ detailed description of the major parameters will be added here soon.
 ## Citation
 
 This software is described in detail in the upcoming publication by Burrow et
-al. 2024, submitted.
+al. (submitted).
